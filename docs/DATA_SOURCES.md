@@ -25,7 +25,7 @@ Checked end to end for three maps covering levels 10–50, and for every 1st and
 | Party EXP / meso split | ✅ | meowdb formulas | Share + party bonus formula (see 3.1). Mesos split evenly (owner decision). |
 | How to get there | ✅ | meowdb | `https://meowdb.com/msclassic/pathfinder?to=<mapId>&taxi=1`; map pages at `/msclassic/maps/<mapId>`. Map IDs are the same as in the game files. |
 | Item and skill icons | ✅ | Game files (`_Canvas` WZ files) | Decoded a test icon: zlib, BGRA4444, 27×24. |
-| Character / gear sprites | ✅ (not decoded) | Game files, maplestory.io fallback | Weapon and body canvases exist, not decoded yet. |
+| Character / gear sprites | ✅ | maplestory.io | Decided 2026-10-24: drawn by maplestory.io, cached in the browser (see 6). Game-file canvases exist for a later upgrade. |
 
 **Verdict: feasible.** Everything needed is available. The only ⚠️ item is respawn timing, which comes from meowdb's
 model rather than the game.
@@ -63,6 +63,9 @@ Location: `C:\Program Files (x86)\Steam\steamapps\common\MapleStory\MSCW\Data` (
   and maps look like `010003090`. Monsters `800xxx` are stronger variants that `link` to a base monster.
 - Map `info` has no `createMobInterval` or `fixedMobCapacity` on the test maps; respawn timing is server-side.
 - `mobTime` is 0 for normal spawn points.
+- One-off maps: ordinary training maps have `forcedReturn` 999999999 and `fieldLimit` 0. The 2nd job tests
+  (`080001000`–`080001300`) and quest maps send you back (`forcedReturn` = a real map) and set `fieldLimit` (72).
+  `forcedReturn` alone is not enough: many open maps set it too.
 
 ## 3. meowdb (https://meowdb.com/msclassic)
 
@@ -136,7 +139,8 @@ What we want: fallback lists (items, maps, monsters) and the image mirror that m
 
 What we want: the character window's sprites (decided 2026-10-24). mapleclassic.training already renders characters
 from it (`src/core/avatar/msio.ts`), relying on its CDN cache. Request a look only when it changes, fetch only the
-frames used, cache them in the browser. A brand-new look takes ~30 s to render the first time.
+frames used, cache them in the browser. A brand-new look takes ~30 s to render the first time, and while busy it
+answers 520 with no CORS header (the browser reports a CORS error). We retry after 30 s, 90 s and 3 minutes.
 
 ## 7. mapleclassic.training (`C:\Users\nexbo\MapleExpTracker`)
 

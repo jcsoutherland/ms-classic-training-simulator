@@ -1,0 +1,1 @@
+{"id":"010003112","bounds":[-390,-370,390,379],"spawns":[{"mobId":700006,"x":4,"y":189,"wanderLeft":-380,"wanderRight":380,"respawnSeconds":3600}],"footholds":[[-400,189,400,189],[-189,-10,-45,-10],[90,-9,234,-9]],"ropes":[[151,-7,187],[-107,-8,189]],"stage":{"characterX":110,"characterY":128,"monsterX":240,"monsterY":128}}

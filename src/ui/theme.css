@@ -1,0 +1,88 @@
+:root {
+  --bg: #0f0e1c;
+  --surface: #161429;
+  --panel: #1a1830;
+  --panel-raised: #1e1c38;
+  --line: #2f2b50;
+  --line-strong: #3a3566;
+  --text: #eeecf8;
+  --text-soft: #c9c4e6;
+  --muted: #9c97b9;
+  --faint: #7d78a0;
+  --accent: #8b7bff;
+  --accent-hover: #a99dff;
+  --warm: #ffb257;
+  --warm-deep: #2a1600;
+  --exp: #a6e05a;
+  --hp: #ff6b78;
+  --mp: #5aa9ff;
+  --gold: #f5c542;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+a { color: var(--accent-hover); }
+a:hover { color: var(--text); }
+:focus-visible { outline: 3px solid var(--accent-hover); outline-offset: 3px; border-radius: 6px; }
+img.pixel, canvas.pixel { image-rendering: pixelated; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+.bar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 28px; min-height: 68px; }
+.brand { font-weight: 800; font-size: 19px; color: var(--text); text-decoration: none; margin-right: auto; }
+.brand:hover { color: var(--gold); }
+.nav { display: flex; flex-wrap: wrap; gap: 4px; }
+.nav a { color: var(--muted); text-decoration: none; padding: 10px 14px; border-radius: 10px; font-weight: 700; }
+.nav a:hover { color: var(--text); background: var(--panel-raised); }
+.nav a[aria-current='page'] { color: var(--text); background: #2a2650; }
+.who { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; padding: 6px 12px 6px 6px; border-radius: 12px; background: var(--panel-raised); border: 1px solid var(--line); }
+.who:hover { color: var(--text); border-color: var(--accent); }
+.who img { width: 32px; height: 32px; }
+.who small { display: block; color: var(--muted); font-size: 14px; line-height: 1.2; }
+.who b { display: block; line-height: 1.2; }
+
+.page-head { padding: 44px 0 26px; }
+.page-head h1 { margin: 0; font-size: 58px; font-weight: 800; line-height: 1.04; letter-spacing: -0.02em; }
+.page-head p { margin: 14px 0 0; max-width: 62ch; color: var(--text-soft); }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 24px; }
+h2 { font-size: 28px; font-weight: 800; margin: 0; line-height: 1.15; }
+h3 { font-size: 20px; font-weight: 800; margin: 28px 0 0; }
+.hint { color: var(--muted); font-size: 15px; margin: 6px 0 0; max-width: 64ch; }
+.warn { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--warm-deep); border: 1px solid var(--warm); color: #ffd9a8; font-size: 15px; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { font: inherit; font-weight: 700; min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+.pill:hover { border-color: var(--accent); }
+.pill[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 12px; border: 0; background: var(--accent); color: var(--bg); font: inherit; font-weight: 800; cursor: pointer; text-decoration: none; }
+.button:hover { background: var(--accent-hover); color: var(--bg); }
+.button.ghost { background: var(--surface); color: var(--text); border: 1px solid var(--line-strong); }
+.button.ghost:hover { background: var(--panel-raised); border-color: var(--accent); }
+.button.gold { background: var(--surface); color: var(--gold); border: 1px solid var(--gold); }
+.button.gold:hover { background: var(--warm-deep); }
+
+.field label { display: block; font-weight: 700; font-size: 15px; margin-bottom: 6px; color: var(--text-soft); }
+.field input, .field select { width: 100%; min-height: 48px; font: inherit; font-size: 19px; font-weight: 800; color: var(--text); border: 1px solid var(--line-strong); border-radius: 12px; padding: 0 12px; background: var(--surface); }
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+
+@media (max-width: 700px) {
+  .wrap { padding: 0 16px; }
+  .page-head h1 { font-size: 40px; }
+}
+.who-blank { width: 32px; height: 32px; }

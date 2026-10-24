@@ -34,7 +34,7 @@ number of hours: kills, EXP, mesos and item drops. Then rank every map that suit
 - **Current EXP %**: optional, defaults to 0%. Used for goal-level maths.
 - **Default profiles**: pick a job and level to get a ready-made character (stats, skill points, gear) built from that
   job's meowdb class guide (1st job 1–30, 2nd job 30–70, Beginner guide). Above 70, the level-70 build carries forward:
-  extra AP follows the guide's pattern, gear and skills stay as at 70, extra SP stays unspent. Screenshots or typed
+  extra AP goes to the stat the guide adds most, gear and skills stay as at 70, extra SP stays unspent. Screenshots or typed
   values override any part of a default.
 - **Attack mix**: the player picks a main attack. For every attack skill with at least one point in it, they set
   what % of the time they use it. The simulation blends the attacks by those percentages.
@@ -79,6 +79,12 @@ A map is skipped from rankings when either rule is true:
 
 Any other map-wide weighting (e.g. "the map's level") also goes by the majority by spawn count.
 
+One-off maps are never ranked, because players can't train there for hours. The extractor marks a map one-off
+from its game-file `info`: a time limit (`timeLimit`), `genReturnMap`, a special `fieldType`, a town, or a forced
+return to another map together with movement limits (`forcedReturn` ≠ 999999999 and `fieldLimit` > 0). That covers
+party quests, the 2nd job tests, quest maps (Pig Farm, Mushmom, the Cursed Sanctuary) and towns. They can still
+be picked on **Train on a map**.
+
 ### 2.6 Character window
 - A small window showing the character in their class and gear, like mapleclassic.training's `CharacterStage`.
   Shown on **Your character** (standing idle) and **Train on a map** (attacking that map's most common monster,
@@ -100,6 +106,9 @@ Any other map-wide weighting (e.g. "the map's level") also goes by the majority 
 - Sprites come from **maplestory.io**, as on mapleclassic.training. To keep its traffic low: request a look only when
   gear, hair or face changes, fetch only the frames used (standing, one attack), and cache them in the browser with
   no expiry. maplestory.io's CDN already serves repeated looks cheaply.
+- maplestory.io can take a minute to draw a brand-new look, or answer "busy". So the scene, monster and effects
+  (all from our mirror) draw at once, and the character joins when its frames arrive. Frames are requested one at a
+  time, and a busy answer is retried after 30 s, 90 s and 3 minutes before giving up.
 - Later upgrade: draw characters in the browser from game-file sprites in our mirror, removing maplestory.io calls.
 - A **loading animation** (the character attacking) appears only when a simulation takes **5 seconds or longer**.
 
@@ -201,6 +210,8 @@ Always ask the owner before using a resource for something new.
 - `mobRate` effect on spawns (4.4).
 - Monster wandering accuracy (4.5).
 - Equipment icon matching from screenshots (2.1).
+- Screenshot reading is built and tested against game-file window art, but not yet against real screenshots.
+  Players check the filled-in form before saving.
 - Classic monster and map IDs are renumbered (Snail = mob 2, Lith Harbor = map 010000000). Never assume old GMS IDs.
 
 ## 8. Milestones (rough order)
