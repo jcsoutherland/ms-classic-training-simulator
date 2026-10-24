@@ -121,7 +121,8 @@ meowdb's spawn model:
 - Kills/hr = min(how fast the party can kill, how fast the map supplies monsters), after travel time.
 - EXP per kill comes from the monster's `exp`. In a party: `Share = round(Pool × (0.8 × lvl / sumLvls + 0.2 × dmg / partyDmg))`
   plus a bonus of `min(0.30, 0.10 × (members - 1)) + 0.05 × (hitters - 1)`.
-- Mesos per kill: average of the monster's meso range (source still to settle, see DATA_SOURCES.md 3.3).
+- Mesos per kill: average of the monster's meso range from meowdb (the game files have none), falling back to
+  meowdb's estimate `floor(2.1 × level) + 3`.
 - Drops: `expected = kills × dropRate`, shown rounded down.
 - Multiply the hourly numbers by the chosen hours.
 
@@ -141,17 +142,17 @@ Left to the developer once the game data is known. Guidelines:
 1. **Game files** (`...\MapleStory\MSCW\Data`) are the most accurate and always come first.
 2. **meowdb** for anything not in the game files (formulas, meso ranges, routes).
 3. Then the others (osmsdataexplorer, maplestory.io).
-4. **Exception: drop rates always come from osmlib** (meowdb only lists which items can drop).
+4. **Exception: drop rates always come from osmlib** (meowdb only lists which items can drop), even though osmlib's
+   monster stats are older than Classic. Take only drop rates from osmlib.
+5. **Mesos**: game files if they ever include them (they don't today), otherwise meowdb.
 
 Always ask the owner before using a resource for something new.
 
 ## 7. Open questions and risks
 
-- **osmlib looks like older GMS data, not Classic.** Its monster stats differ from the Classic game files (Ligator:
-  osmlib Lv32/1,200 HP, Classic Lv31/853 HP; Wraith: 2,800 vs 2,350 HP). Its drop rates may not match Classic
-  either. The owner needs to decide whether to use them as they are.
-- **Meso amounts**: not in the game files. meowdb has a formula (`floor(2.1 × level) + 3`, ±10%) that was checked only
-  for levels 1–22. osmlib has a per-monster amount and chance, again from older data. **Decide which to use.**
+- osmlib is older GMS data (its monster stats differ from Classic), so its drop rates may be a little off. Decided:
+  use them anyway.
+- meowdb's meso estimate was only checked for levels 1–22; prefer its per-monster meso data where it exists.
 - `mobRate` effect on spawns (4.4).
 - Monster wandering accuracy (4.5).
 - Equipment icon matching from screenshots (2.1).

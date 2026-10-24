@@ -19,16 +19,16 @@ Checked end to end for three maps covering levels 10–50, and for every 1st and
 | How often monsters respawn | ⚠️ | meowdb spawn model | Not in game files (server-side). meowdb: 7.56 s global tick, 5 s point cooldown, capacity by player count. Maps also have `mobRate`, which meowdb doesn't explain. |
 | Spawn spacing / map layout | ✅ | Game files | Spawn positions, footholds (platforms), ropes/ladders, portals, map bounds. |
 | Monster stats | ✅ | Game files (`Packs/Mob_00000.ms`) | `level, exp, maxHP, PDDamage, MDDamage, acc, eva, speed, undead, elemAttr`. 118 monsters. |
-| Meso drops | ⚠️ | meowdb formula or osmlib | Not in game files. meowdb: `floor(2.1 × level) + 3`, ×90–110%, checked only to level 22. osmlib: amount + chance per monster, but older data. **Owner to decide.** |
-| Item drops with rate | ⚠️ | osmlib | Rates exist for all three test monsters, but osmlib's monster stats don't match Classic, so its rates may be from older GMS. meowdb says the same about the osmlib rates it shows. |
+| Meso drops | ✅ | meowdb | Not in game files (none of the 41 monster `info` fields is a meso amount; checked 2026-10-24). Use meowdb: its per-monster meso data where shown, else `floor(2.1 × level) + 3`, ×90–110%. |
+| Item drops with rate | ✅ | osmlib | **Always osmlib** (owner decision), even though osmlib's monster stats are older than Classic. Rates exist for all three test monsters. |
 | Accuracy / hit chance | ✅ | meowdb formulas | Full formula including level difference (see 3.1). Monster `eva` from game files. |
 | Party EXP / meso split | ✅ | meowdb formulas | Share + party bonus formula (see 3.1). Mesos split evenly (owner decision). |
 | How to get there | ✅ | meowdb | `https://meowdb.com/msclassic/pathfinder?to=<mapId>&taxi=1`; map pages at `/msclassic/maps/<mapId>`. Map IDs are the same as in the game files. |
 | Item and skill icons | ✅ | Game files (`_Canvas` WZ files) | Decoded a test icon: zlib, BGRA4444, 27×24. |
 | Character / gear sprites | ✅ (not decoded) | Game files, maplestory.io fallback | Weapon and body canvases exist, not decoded yet. |
 
-**Verdict: feasible.** Everything needed is available. The three ⚠️ items work but need an owner decision on how
-much to trust them.
+**Verdict: feasible.** Everything needed is available. The only ⚠️ item is respawn timing, which comes from meowdb's
+model rather than the game.
 
 ## 2. Game files (Classic World)
 
@@ -113,8 +113,8 @@ Test results (osmlib vs Classic game files):
 | Ligator | 32 / 1,200 / 60 | 31 / 853 / 58 | Ligator Skin 50%, Alligator Skin Pouch 20%, White Potion 1%, Plunger 0.01%; mesos "95, 65%" |
 | Wraith | 48 / 2,800 / 120 | 48 / 2,350 / 122 | Mithril Nordic Helm 0.008%, Red Sonata 0.007%; mesos "220, 62%" |
 
-The stats differ, so osmlib is older GMS data. **Decision needed:** use osmlib rates as they are, or look for
-Classic-specific rates.
+The stats differ, so osmlib is older GMS data. **Decided:** use osmlib drop rates regardless; take only the drop
+rates from it, never its monster stats or meso amounts.
 
 ## 5. osmsdataexplorer (https://osmsdataexplorer.com)
 
