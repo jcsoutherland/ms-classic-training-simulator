@@ -27,7 +27,15 @@ number of hours: kills, EXP, mesos and item drops. Then rank every map that suit
 - **Manual entry**: the same fields, typed in. Screenshot reading fills this form, and the player checks and fixes it.
 - **Equipment** is recorded but **not used in the maths**, because the stats window already includes it. It's kept so
   a later feature can draw the character wearing that gear.
-- **No buffs and no potions.** MP and HP never interrupt training.
+- **Buffs count, potions don't.** Every buff skill the character has points in (Boosters, Rage, Magic Guard, Haste,
+  …) counts at **100% uptime**. MP and HP never interrupt training.
+- **Enter stats with no buffs on.** The Stats window includes active buffs, so the form and screenshot box tell
+  players to take screenshots or copy numbers unbuffed, to avoid counting a buff twice.
+- **Current EXP %**: optional, defaults to 0%. Used for goal-level maths.
+- **Default profiles**: pick a job and level to get a ready-made character (stats, skill points, gear) built from that
+  job's meowdb class guide (1st job 1–30, 2nd job 30–70, Beginner guide). Above 70, the level-70 build carries forward:
+  extra AP follows the guide's pattern, gear and skills stay as at 70, extra SP stays unspent. Screenshots or typed
+  values override any part of a default.
 - **Attack mix**: the player picks a main attack. For every attack skill with at least one point in it, they set
   what % of the time they use it. The simulation blends the attacks by those percentages.
 - **Several saved characters** per browser (idb-keyval), switchable. Nothing leaves the player's computer.
@@ -35,19 +43,26 @@ number of hours: kills, EXP, mesos and item drops. Then rank every map that suit
   (mapleclassic.training already does image matching, see its `src/core`).
 
 ### 2.2 Single-map prediction
-- The player picks a map and a number of **hours**.
-- The model works out one hour and multiplies it. The point of choosing hours is the total kill count, which drives
-  the drop estimate.
-- Results show kills, EXP and mesos, plus a **drop log**:
+- The player sets the session length **either** by hours **or** by a goal level; the other is worked out and shown
+  ("Level 34 to 40 takes about 14.5 hours here").
+  - Hours: a free-form box, **0.5 to 1,000**, rounded to the nearest half hour and clamped to those limits.
+  - Goal level: any level above the current one, up to **100**, starting from the current EXP %.
+  - On the way to a goal the character's stats, skills and gear stay as entered (only the level rises, so EXP per
+    level grows). The page reminds players to update their character as they level.
+- The model works out one hour and multiplies it. **Kills, EXP and mesos are fixed averages.**
+- Results show kills, EXP and mesos, plus a **drop log** that looks like a real session:
   - every item the map's monsters can drop: equipment, use and etc items, plus raw mesos
-  - each item with its icon, linking to its meowdb item page
-  - expected count as a **whole number, rounded down** (e.g. "3 Red Whips")
-  - the **chance of getting at least one** over the session: `1 - (1 - rate)^kills`
-- A "how to get there" link to the meowdb pathfinder for the map.
+  - **every item drop is rolled randomly** from its rate and the session's kills (common items land near their
+    average, rare items like a Plunger sometimes appear), so the log differs a little each run
+  - each item with its icon, linking to its meowdb item page, and its chance of getting at least one
+  - a **"Roll again"** button re-rolls the drops; the latest roll is saved, so the same map + character + inputs
+    shows the same drops after a reload
+  - rolling is done once per item (binomial / Poisson sampling), never once per kill, so 1,000 hours stays fast
+- A clear **"How to get there"** button to the meowdb pathfinder for the map.
 
 ### 2.3 Map rankings
 - Simulate every **viable** map (see 2.5) for the character and show a table:
-  **map, EXP/hr, mesos/hr, kills/hr, possible drops**.
+  **map, EXP/hr, mesos/hr, kills/hr, time to reach the goal level, possible drops**.
 - Click a column header to sort by it.
 - The party size setting applies here too. A party size of 1 means solo.
 
@@ -63,6 +78,36 @@ A map is skipped from rankings when either rule is true:
 - **Too hard**: the character's chance to hit is under **75%** for **any** monster on the map.
 
 Any other map-wide weighting (e.g. "the map's level") also goes by the majority by spawn count.
+
+### 2.6 Character window
+- A small window showing the character in their class and gear, like mapleclassic.training's `CharacterStage`.
+  Shown on **Your character** (standing idle) and **Train on a map** (attacking that map's most common monster,
+  or a Slime when that monster can't be drawn).
+- Uses the right body animation for the weapon (swing, stab, shoot, throw). Shows the main attack's skill effect only
+  if it can look true to the game in scale and style; otherwise no projectile.
+- Casts every buff the character has points in, one after another, at the start and about every 30 seconds.
+- **Real map scenes**: the window is a cropped render of an actual map from the game files (backgrounds, objects and
+  tiles drawn in game order), with the character standing on a real foothold. Scenes are 348×160 game pixels shown
+  at 1.5× (mapleclassic.training's zoom), pre-rendered by the extractor, not drawn live.
+  - **Train on a map**: a spot on that training map near its most common monster, which stands on the same ground.
+  - **Your character**: a spot near the spawn point of the job's starting town: Perion `010004000` (Warriors),
+    Ellinia `010002000` (Magicians), Henesys `010001000` (Bowmen), Kerning City `010003000` (Thieves). Sleepywood
+    `010005000` is available too. A map's region is in `info.mapMark` (Henesys, Ellinia, Perion, KerningCity,
+    Dungeon = Sleepywood, Rith = Lith Harbor, Amherst, MushroomVillage, SouthPerry).
+- **Skill effects come from the game files**: e.g. Lucky Seven = the claw's throw pose + the skill's `effect` frames
+  + the throwing star's `bullet` frames (`Item/Consume/0207.img`) flying to the monster + the skill's `hit` frames on
+  it. All are anchored by their game origins, so scale matches the game.
+- Sprites come from **maplestory.io**, as on mapleclassic.training. To keep its traffic low: request a look only when
+  gear, hair or face changes, fetch only the frames used (standing, one attack), and cache them in the browser with
+  no expiry. maplestory.io's CDN already serves repeated looks cheaply.
+- Later upgrade: draw characters in the browser from game-file sprites in our mirror, removing maplestory.io calls.
+- A **loading animation** (the character attacking) appears only when a simulation takes **5 seconds or longer**.
+
+### 2.7 Look
+- Same palette and font as mapleclassic.training: background `#0F0E1C`, panels `#1A1830`, surface `#161429`, lines
+  `#2F2B50`, text `#EEECF8`, muted `#9C97B9`, accent `#8B7BFF`, warm `#FFB257`, EXP `#A6E05A`, HP `#FF6B78`,
+  MP `#5AA9FF`, drops `#F5C542`; system font.
+- Design mockups: the private "MS Classic Training Simulator designs" canvas on claude.ai.
 
 ## 3. Tech stack
 
@@ -133,8 +178,8 @@ Left to the developer once the game data is known. Guidelines:
 - Ranking needs every viable map at once, so one compact `maps` index plus monsters, skills and items is likely better
   than thousands of tiny files. Detail-only data (footholds) can sit in per-map files loaded on demand.
 - Icons are extracted from the game files into the repo. Anything missing falls back to a build-time mirror from
-  osmsdataexplorer, the way mapleclassic.training does it. Character and gear sprites follow the same order
-  (game files first, maplestory.io as fallback).
+  osmsdataexplorer, the way mapleclassic.training does it. Character sprites come from maplestory.io for now (2.6).
+- meowdb class guides are read once into our mirror (default profiles), never fetched by players.
 - Suggested folders: `public/data/{maps,mobs,skills,items}`, `public/data/icons`, extractor code in `tools/extract`.
 
 ## 6. Data priority

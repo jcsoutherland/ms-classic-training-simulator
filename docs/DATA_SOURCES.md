@@ -95,7 +95,18 @@ each page once; store results in the mirror. Formula pages:
 - Monster: `/msclassic/monsters/<mobId>`. Item: `/msclassic/item-db/<meowdbItemNumber>` (meowdb's own numbering;
   map names to numbers once from `/msclassic/item-db/all`, as mapleclassic.training does).
 
-### 3.3 Meso and drop notes
+### 3.3 Class guides (default profiles)
+Index: `/msclassic/guides`. Each guide has per-level tables for AP (stats), SP (skill order), gear by level and
+training spots. Read each once into the mirror.
+- 1st job, Lv 1–30: `thief-class-guide`, `warrior-class-guide`, `bowman-class-guide`, `magician-class-guide`
+- 2nd job, Lv 30–70: `fighter-`, `page-`, `spearman-`, `fp-wizard-`, `il-wizard-`, `cleric-`, `hunter-`,
+  `crossbowman-`, `assassin-`, `bandit-class-guide`
+- Beginner: `beginners-guide-first-steps-in-maple-world` (to level 35, not class-specific)
+- No guides past 70 (3rd job isn't out).
+- Also useful for the simulator: `weapon-reach`, `attack-speed-and-animation-times`,
+  `spawn-engine-respawn-and-map-capacity`, `exp-table-level-1-to-100`, `best-grind-maps-every-level`.
+
+### 3.4 Meso and drop notes
 Monster pages load their community drop and meso lists in the browser. They list "MSEA reference drops" (historical)
 and show osmlib rates with a note that they may not match Classic.
 
@@ -123,8 +134,9 @@ What we want: fallback lists (items, maps, monsters) and the image mirror that m
 
 ## 6. maplestory.io
 
-What we want: fallback for character and gear sprites if game-file rendering is too hard. mapleclassic.training already
-renders characters from it without mirroring, relying on its CDN cache.
+What we want: the character window's sprites (decided 2026-10-24). mapleclassic.training already renders characters
+from it (`src/core/avatar/msio.ts`), relying on its CDN cache. Request a look only when it changes, fetch only the
+frames used, cache them in the browser. A brand-new look takes ~30 s to render the first time.
 
 ## 7. mapleclassic.training (`C:\Users\nexbo\MapleExpTracker`)
 
