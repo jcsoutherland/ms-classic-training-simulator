@@ -45,7 +45,9 @@ export function CharacterPage() {
               <span className="card-level"><small>Lv</small><b>{saved.level}</b></span>
             </button>
           ))}
-          <button className="add-character" type="button" aria-label="Add a character" title="Add a character" onClick={() => { addCharacter().catch((error: unknown) => setProblem(String(error))); }}>+</button>
+          <button className="add-character" type="button" aria-label="Add a character" title="Add a character" onClick={() => { addCharacter().catch((error: unknown) => setProblem(String(error))); }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M9 2v14M2 9h14" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
+          </button>
         </div>
         {problem && <p className="warn">{problem}</p>}
       </div>

@@ -59,7 +59,19 @@ export function readItemIcon(files: GameFiles, itemId: number): Sprite | null {
   const source = files.image(location.file, location.image);
   const node = location.child ? source.root[location.child] as WzNode | undefined : source.root;
   const info = node?.info as WzNode | undefined;
-  return files.sprite(source, info?.iconRaw ?? info?.icon);
+  const infoPath = location.child ? [location.child, 'info'] : ['info'];
+  return files.sprite(source, followLink(source.root, infoPath, info?.iconRaw) ?? followLink(source.root, infoPath, info?.icon));
+}
+
+export function followLink(root: WzNode, parentPath: string[], value: unknown): unknown {
+  const link = (value as WzNode | undefined)?.__uol;
+  if (typeof link !== 'string') return value;
+  const path = [...parentPath];
+  for (const part of link.split('/')) {
+    if (part === '..') path.pop();
+    else if (part && part !== '.') path.push(part);
+  }
+  return path.reduce<unknown>((node, key) => (node as WzNode | undefined)?.[key], root);
 }
 
 export function readActionDelays(files: GameFiles): Record<string, number[]> {

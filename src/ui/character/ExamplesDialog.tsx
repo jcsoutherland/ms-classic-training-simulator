@@ -17,18 +17,20 @@ export function ExamplesDialog({ open, onClose }: { open: boolean; onClose: () =
     if (!open && element.open) element.close();
   }, [open]);
   return (
-    <dialog ref={dialog} className="dialog examples" onCancel={(event) => { event.preventDefault(); onClose(); }}>
-      <p className="dialog-title">Screenshot examples</p>
+    <dialog ref={dialog} className="dialog examples" aria-labelledby="examples-title"
+      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div className="examples-head">
+        <p className="dialog-title" id="examples-title">Screenshot examples</p>
+        <button className="pill close-button" type="button" aria-label="Close examples" onClick={onClose}>×</button>
+      </div>
       <div className="example-grid">
         {EXAMPLES.map(([file, caption]) => (
-          <figure key={file}>
+          <figure key={file} className={file === 'stat.png' ? 'wide' : undefined}>
             <img className="pixel" src={imageUrl(`img/examples/${file}`)} alt={caption} />
             <figcaption className="muted">{caption}</figcaption>
           </figure>
         ))}
-      </div>
-      <div className="dialog-actions">
-        <button className="button" type="button" onClick={onClose}>Close</button>
       </div>
     </dialog>
   );

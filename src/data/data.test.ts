@@ -72,6 +72,11 @@ describe('extracted maps', () => {
 });
 
 describe('extracted items', () => {
+  it('has a picture for every scroll, shared within each tier', () => {
+    const scrolls = items.filter((item) => / Scroll: /.test(item.name));
+    expect(scrolls.filter((item) => !fs.existsSync(path.join(DATA, 'img', 'items', `${item.id}.png`))).map((item) => item.name)).toEqual([]);
+  });
+
   it('marks quest items such as the Alligator Skin Pouch', () => {
     expect(items.find((item) => item.name === 'Alligator Skin Pouch')?.quest).toBe(true);
   });

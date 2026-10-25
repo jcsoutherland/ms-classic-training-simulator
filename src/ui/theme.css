@@ -93,6 +93,22 @@ h3 { font-size: 14px; font-weight: 800; margin: 14px 0 0; }
 .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
 
 .compare-pick select { width: 210px; font-size: 14px; font-weight: 700; }
+.compare-row { display: flex; gap: 6px; }
+.dialog-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0 10px; background: var(--panel); }
+.dialog-head .dialog-title { margin: 0; }
+.close-button { min-width: 34px; font-size: 18px; line-height: 1; }
+.dialog.build { width: min(92vw, 640px); max-width: none; max-height: calc(100vh - 32px); overflow: auto; padding-top: 0; }
+.build-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 4px 20px; padding-bottom: 8px; }
+.build-body section { min-width: 0; }
+.build-body h3 { margin: 6px 0 6px; }
+.build-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px; margin: 0; }
+.build-stats div { padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.build-stats dt { color: var(--muted); font-size: 11px; }
+.build-stats dd { margin: 0; font-weight: 800; }
+.build-list { list-style: none; margin: 0; padding: 0; }
+.build-list li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.build-skill { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.build-skill img { width: 20px; height: 20px; }
 
 @media (max-width: 700px) {
   .wrap { padding: 0 16px; }
