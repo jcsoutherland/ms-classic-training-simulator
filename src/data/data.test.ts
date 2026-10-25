@@ -53,6 +53,10 @@ describe('extracted maps', () => {
     expect(instanced('010004054')).toBe(false);
   });
 
+  it('marks B1 <Area 1>, which only has timed boss spawns, as a boss map', () => {
+    expect(maps.find((map) => map.id === '010003100')?.bossOnly).toBe(true);
+  });
+
   it('has a detail file for every map in the index', () => {
     expect(maps.filter((map) => !fs.existsSync(path.join(DATA, 'maps', `${map.id}.json`)))).toEqual([]);
   });

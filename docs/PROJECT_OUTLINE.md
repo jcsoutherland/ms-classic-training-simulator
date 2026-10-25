@@ -83,6 +83,12 @@ A map is skipped from rankings when either rule is true:
 
 Any other map-wide weighting (e.g. "the map's level") also goes by the majority by spawn count.
 
+If fewer than **5** maps pass, the best "too easy" maps (by EXP per hour) are added until there are 5, each
+tagged "Lower-level monsters". This keeps rankings useful above level 70, where Classic has few maps yet.
+
+**Boss maps** (every spawn point is on a boss timer, e.g. B1 <Area 1>, Cabin of the Forsaken) are not training maps:
+they never appear in rankings, the left-out list or map search.
+
 One-off maps are never ranked, because players can't train there for hours. The extractor marks a map one-off
 from its game-file `info`: a time limit (`timeLimit`), `genReturnMap`, a special `fieldType`, a town, or a forced
 return to another map together with movement limits (`forcedReturn` ≠ 999999999 and `fieldLimit` > 0). That covers

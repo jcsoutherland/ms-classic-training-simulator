@@ -108,3 +108,27 @@ describe('rankMaps for a level 34 Assassin', () => {
     expect(rates).toEqual([...rates].sort((a, b) => b - a));
   });
 });
+
+describe('rankMaps for a level 80 Hunter, above most Classic maps', () => {
+  const rankings = rankMaps(flynny({ level: 80, accuracy: 200 }), data, realMapDetails, 1, 81);
+
+  it('still ranks at least 5 maps', () => {
+    expect(rankings.ranked.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('marks the maps added from below the usual level range', () => {
+    expect(rankings.ranked.some((entry) => entry.lowerLevel)).toBe(true);
+  });
+
+  it('says the list was widened', () => {
+    expect(rankings.widened).toBe(true);
+  });
+});
+
+describe('rankMaps and boss maps', () => {
+  it('never ranks or lists a boss-only map such as Cabin of the Forsaken', () => {
+    const rankings = rankMaps(flynny({ level: 60 }), data, realMapDetails, 1, 61);
+    const shown = [...rankings.ranked, ...rankings.leftOut].map((entry) => entry.map.id);
+    expect(shown).not.toContain('010003112');
+  });
+});

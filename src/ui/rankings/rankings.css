@@ -12,6 +12,7 @@
 .board td.n { font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 800; white-space: nowrap; }
 .board td.n.on { background: var(--panel-raised); color: var(--gold); }
 .board .map a { font-weight: 800; text-decoration: none; color: var(--text); }
+.board .lower-level { margin-left: 8px; padding: 1px 6px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .board .map a:hover { color: var(--accent-hover); text-decoration: underline; }
 .board .mobs { display: flex; align-items: center; gap: 8px; margin-top: 2px; color: var(--muted); font-size: 12px; }
 .board .mobs img { max-height: 26px; max-width: 40px; }

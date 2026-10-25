@@ -39,7 +39,7 @@ export function RankingsPage() {
       <div className="page-head rankings-head">
         <div>
           <h1>Where should {character.name} train?</h1>
-          <p>{rankings ? `${rankings.ranked.length} maps suit a level ${character.level} ${jobName(character.jobId)}. Pick a column to sort by it.` : 'Working out every map for you…'}</p>
+          <p>{rankings ? headline(rankings, character) : 'Working out every map for you…'}</p>
         </div>
         <div className="rankings-controls">
           <div className="field compact">
@@ -80,6 +80,12 @@ export function RankingsPage() {
       )}
     </main>
   );
+}
+
+function headline(rankings: Rankings, character: Character): string {
+  const who = `a level ${character.level} ${jobName(character.jobId)}`;
+  if (rankings.widened) return `Few maps suit ${who} yet, so the best maps with lower-level monsters are included.`;
+  return `${rankings.ranked.length} maps suit ${who}.`;
 }
 
 function LeftOut({ rankings, character, site }: { rankings: Rankings; character: Character; site: SiteData }) {

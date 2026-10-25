@@ -11,6 +11,7 @@ export interface MapSummary {
   spawnCounts: [mobId: number, spawnPoints: number][];
   hasScene: boolean;
   instanced: boolean;
+  bossOnly: boolean;
 }
 
 export interface SpawnPoint {

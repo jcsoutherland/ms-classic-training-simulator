@@ -35,6 +35,7 @@ export function readMap(files: GameFiles, strings: Strings, id: string): Extract
     spawnCounts: countSpawns(spawns),
     hasScene: placement !== null,
     instanced: isInstanced(info),
+    bossOnly: spawns.length > 0 && spawns.every((spawn) => spawn.respawnSeconds > 0),
   };
   const detail: MapDetail = {
     id,

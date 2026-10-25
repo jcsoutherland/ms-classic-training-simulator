@@ -1,5 +1,5 @@
 import type { Character } from '../../character/types';
-import type { GameData } from '../../data/gameData';
+import { isTrainingMap, type GameData } from '../../data/gameData';
 import { hitChance, VIABLE_HIT_CHANCE } from '../../sim/accuracy';
 import { effectiveAccuracy } from '../../sim/simulateMap';
 
@@ -9,7 +9,7 @@ export function suggestMap(character: Character, data: GameData): string {
   const accuracy = effectiveAccuracy(character, data);
   let best: { id: string; gap: number } | null = null;
   for (const map of data.maps) {
-    if (map.instanced) continue;
+    if (!isTrainingMap(map)) continue;
     const main = data.monsters.get(map.spawnCounts[0]?.[0]);
     if (!main || hitChance(accuracy, character.level, main.level, main.avoid) < VIABLE_HIT_CHANCE) continue;
     const gap = Math.abs(character.level - 3 - main.level);

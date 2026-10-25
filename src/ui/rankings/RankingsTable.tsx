@@ -62,6 +62,7 @@ export function RankingsTable({ ranked, monsters, items, likelyEquipment, itemLi
                 <td className="rank">{index + 1}</td>
                 <td className="map">
                   <a href={routeHref({ page: 'train', mapId: entry.map.id })}>{entry.map.name}</a>
+                  {entry.lowerLevel && <span className="lower-level">Lower-level monsters</span>}
                   {main && (
                     <div className="mobs">
                       <a href={meowdbMonsterUrl(main.id)} target="_blank" rel="noreferrer" title={main.name}><img className="pixel" src={imageUrl(`img/mobs/${main.id}/icon.png`)} alt={main.name} /></a>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { isTrainingMap } from '../../data/gameData';
 import type { MapSummary, Monster } from '../../data/types';
 import { routeHref } from '../routes';
 
@@ -16,7 +17,7 @@ export function MapPicker({ maps, monsters, currentId }: MapPickerProps) {
     const wanted = query.trim().toLowerCase();
     if (wanted.length < 2) return [];
     return maps
-      .filter((map) => !map.instanced && map.id !== currentId)
+      .filter((map) => isTrainingMap(map) && map.id !== currentId)
       .filter((map) => `${map.name} ${map.street} ${map.spawnCounts.map(([id]) => monsters.get(id)?.name ?? '').join(' ')}`.toLowerCase().includes(wanted))
       .slice(0, RESULT_LIMIT);
   }, [query, maps, monsters, currentId]);

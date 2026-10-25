@@ -42,6 +42,10 @@ function withoutQuestItems(drops: DropTables, items: Item[]): DropTables {
   return Object.fromEntries(Object.entries(drops).map(([monsterId, table]) => [monsterId, table.filter((entry) => !questIds.has(entry.itemId))]));
 }
 
+export function isTrainingMap(map: MapSummary): boolean {
+  return !map.instanced && !map.bossOnly;
+}
+
 export function jobLine(jobId: number): number[] {
   if (jobId === 0) return [0];
   const branch = Math.floor(jobId / 100) * 100;
