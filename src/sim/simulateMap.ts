@@ -86,8 +86,10 @@ export function simulateMap(character: Character, data: GameData, detail: MapDet
       mainTarget,
     };
   };
+  const nothing: MapSimulation = { mapId: detail.id, players, killsPerHour: 0, killsByMonster: new Map(), expPerHour: 0, mesosPerHour: 0, limitedBy: 'respawns', hitChances, mainTarget: null };
+  if (!points.length) return nothing;
   const options = styles.flatMap((style) => [...style.attemptsToKill.keys()].map((target) => outcome(style, target)));
-  if (!points.length || !options.length) return { ...outcome(styles[0], null), killsPerHour: 0, killsByMonster: new Map(), expPerHour: 0, mesosPerHour: 0 };
+  if (!options.length) return nothing;
   const best = options.reduce((chosen, option) => (option.expPerHour > chosen.expPerHour ? option : chosen));
   return { ...best, mainTarget: mostDefeated(best.killsByMonster) };
 }

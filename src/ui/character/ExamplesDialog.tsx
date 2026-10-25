@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import { imageUrl } from '../../data/loadGameData';
 
 const EXAMPLES: [file: string, caption: string][] = [
-  ['stat.png', 'Stats window with Detail open'],
-  ['equips.png', 'Equipment window, Equip tab'],
-  ['skill_2.png', 'Skill window, one tab per screenshot'],
-  ['skill_3.png', 'Skill window, next tab'],
+  ['example-stat.png', 'Stats window with Detail open'],
+  ['example-equips.png', 'Equipment window, Equip tab'],
+  ['example-skill_2.png', 'Skill window, one tab per screenshot'],
+  ['example-skill_3.png', 'Skill window, next tab'],
 ];
 
 export function ExamplesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -26,7 +26,7 @@ export function ExamplesDialog({ open, onClose }: { open: boolean; onClose: () =
       </div>
       <div className="example-grid">
         {EXAMPLES.map(([file, caption]) => (
-          <figure key={file} className={file === 'stat.png' ? 'wide' : undefined}>
+          <figure key={file} className={file === 'example-stat.png' ? 'wide' : undefined}>
             <img className="pixel" src={imageUrl(`img/examples/${file}`)} alt={caption} />
             <figcaption className="muted">{caption}</figcaption>
           </figure>

@@ -74,6 +74,12 @@ describe('simulateMap on Line 1 <Area 2>', () => {
   });
 });
 
+describe('simulateMap on a map with only timed boss spawns', () => {
+  it('gives no kills instead of failing', () => {
+    expect(simulateMap(flynny({ level: 60 }), data, realMapDetails('010003112'), 1).killsPerHour).toBe(0);
+  });
+});
+
 describe('simulateMap on a map with one kind of monster', () => {
   it('only defeats that monster', () => {
     const wraiths = simulateMap(sampleAssassin({ level: 50, accuracy: 200 }), data, realMapDetails('010003065'), 1);
