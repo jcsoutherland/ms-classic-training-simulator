@@ -62,9 +62,13 @@ number of hours: kills, EXP, mesos and item drops. Then rank every map that suit
 
 ### 2.3 Map rankings
 - Simulate every **viable** map (see 2.5) for the character and show a table:
-  **map, EXP/hr, mesos/hr, kills/hr, time to reach the goal level, possible drops**.
+  **map, EXP/hr, mesos/hr, kills/hr, time to reach the goal level, likely equipment drops**.
 - Click a column header to sort by it.
 - The party size setting applies here too. A party size of 1 means solo.
+- **Train on a map** opens on the #1 map here unless the player picked a map (search or a ranking link).
+- **Compare**: pick another saved character, or another job at the same level (its guide build). Best maps shows
+  two ranked tables side by side, with a gold edge on maps in both top 10. Train on a map shows their kills, EXP and
+  mesos under yours; drops stay yours.
 
 ### 2.4 Party prediction
 - Party size N (1–6), with every member a copy of the entered character.
@@ -172,12 +176,16 @@ meowdb's spawn model:
   adjustment **only if** it can be modeled accurately. Otherwise monsters are treated as standing at their spawn point.
 
 ### 4.6 Kills, EXP and mesos per hour
-- Kills/hr = min(how fast the party can kill, how fast the map supplies monsters), after travel time.
+- **Who you fight**: players camp one monster. For each monster on the map, the simulation camps the platforms
+  (spawn groups) where it makes up most of the spawn points (or every platform it spawns on, if it's never the
+  majority). Other monsters on those platforms are fought only when in the way, counted at half their spawns.
+  The option with the most EXP per hour wins; the "main monster" shown is the one defeated most often.
+- Kills/hr = min(how fast the party can kill, how fast the camped platforms supply monsters), after travel time.
 - EXP per kill comes from the monster's `exp`. In a party: `Share = round(Pool × (0.8 × lvl / sumLvls + 0.2 × dmg / partyDmg))`
   plus a bonus of `min(0.30, 0.10 × (members - 1)) + 0.05 × (hitters - 1)`.
 - Mesos per kill: average of the monster's meso range from meowdb (the game files have none), falling back to
   meowdb's estimate `floor(2.1 × level) + 3`.
-- Drops: `expected = kills × dropRate`, shown rounded down.
+- Drops: `expected = kills × dropRate`, shown rounded down. Quest items (`info/quest` in `Item/Etc`) are left out.
 - Multiply the hourly numbers by the chosen hours.
 
 ## 5. Data layout (to decide when building the extractor)

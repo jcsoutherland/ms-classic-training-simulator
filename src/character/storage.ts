@@ -32,6 +32,10 @@ export function upsertCharacter(characters: Character[], character: Character): 
   return characters.map((existing, position) => (position === index ? character : existing));
 }
 
+export function removeCharacter(characters: Character[], id: string): Character[] {
+  return characters.filter((existing) => existing.id !== id);
+}
+
 export function newCharacterId(): string {
   return `character-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
 }

@@ -7,18 +7,25 @@ export interface SpawnGroup {
   x: number;
   y: number;
   points: number;
+  spawns: SpawnPoint[];
 }
 
 export function groupSpawns(spawns: SpawnPoint[], reach: number): SpawnGroup[] {
   const sorted = [...spawns].sort((a, b) => a.y - b.y || a.x - b.x);
-  const groups: { xs: number[]; y: number }[] = [];
+  const groups: { members: SpawnPoint[]; y: number }[] = [];
   for (const spawn of sorted) {
     const group = groups.find((candidate) => Math.abs(candidate.y - spawn.y) <= SAME_PLATFORM_HEIGHT
-      && Math.abs(average(candidate.xs) - spawn.x) <= reach * 2);
-    if (group) group.xs.push(spawn.x);
-    else groups.push({ xs: [spawn.x], y: spawn.y });
+      && Math.abs(average(candidate.members.map((member) => member.x)) - spawn.x) <= reach * 2);
+    if (group) group.members.push(spawn);
+    else groups.push({ members: [spawn], y: spawn.y });
   }
-  return groups.map((group) => ({ x: average(group.xs), y: group.y, points: group.xs.length }));
+  return groups.map((group) => ({ x: average(group.members.map((member) => member.x)), y: group.y, points: group.members.length, spawns: group.members }));
+}
+
+export function campedGroups(groups: SpawnGroup[], targetId: number): SpawnGroup[] {
+  const targetCount = (group: SpawnGroup) => group.spawns.filter((spawn) => spawn.mobId === targetId).length;
+  const majority = groups.filter((group) => targetCount(group) * 2 > group.points);
+  return majority.length ? majority : groups.filter((group) => targetCount(group) > 0);
 }
 
 export function secondsBetweenGroups(groups: SpawnGroup[], speedPercent: number): number {

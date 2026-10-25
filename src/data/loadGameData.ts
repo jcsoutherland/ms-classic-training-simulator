@@ -33,7 +33,7 @@ export async function loadSiteData(): Promise<SiteData> {
     fetchJson<Guide[]>('guides.json'),
   ]);
   return {
-    game: indexGameData({ monsters, jobs, actions, weapons, maps, mesos, drops }),
+    game: indexGameData({ monsters, jobs, actions, weapons, maps, mesos, drops, items: itemList }),
     items: new Map(itemList.map((item) => [item.id, item])),
     itemList,
     itemLinks,

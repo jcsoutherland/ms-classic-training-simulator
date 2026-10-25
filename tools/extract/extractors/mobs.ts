@@ -3,7 +3,7 @@ import { childNodes, numberOf, type GameFiles, type Sprite } from '../gameFiles'
 import type { WzNode } from '../wz/image';
 
 export const MOB_PACK = 'Packs/Mob_00000.ms';
-const ANIMATIONS = ['stand', 'move', 'hit1', 'die1'];
+const ANIMATIONS = ['stand', 'move', 'fly', 'hit1', 'die1'];
 
 export interface MobImages {
   icon: Sprite | null;
@@ -40,7 +40,7 @@ export function readMobImages(files: GameFiles, mobId: number): MobImages {
   const entryName = `Mob/${String(mobId).padStart(7, '0')}.img`;
   const source = files.image(MOB_PACK, entryName);
   const link = numberOf((source.root.info as WzNode | undefined)?.link);
-  if (!source.root.stand && !source.root.move && link !== undefined && link !== mobId) return readMobImages(files, link);
+  if (!source.root.stand && !source.root.move && !source.root.fly && link !== undefined && link !== mobId) return readMobImages(files, link);
   const frames: Record<string, Sprite[]> = {};
   for (const action of ANIMATIONS) {
     const node = source.root[action] as WzNode | undefined;
@@ -52,7 +52,7 @@ export function readMobImages(files: GameFiles, mobId: number): MobImages {
       .filter((sprite): sprite is Sprite => sprite !== null);
     if (sprites.length) frames[action] = sprites;
   }
-  const icon = frames.stand?.[0] ?? frames.move?.[0] ?? null;
+  const icon = frames.stand?.[0] ?? frames.move?.[0] ?? frames.fly?.[0] ?? null;
   return { icon, frames };
 }
 

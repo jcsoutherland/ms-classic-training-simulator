@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import type { Job, MapDetail, MapSummary, Monster } from './types';
+import { realGameData } from '../sim/testData';
+import type { Item, Job, MapDetail, MapSummary, Monster } from './types';
 
 const DATA = fileURLToPath(new URL('../../public/data', import.meta.url));
 
@@ -13,6 +14,7 @@ function load<T>(relativePath: string): T {
 const monsters = load<Monster[]>('mobs.json');
 const jobs = load<Job[]>('jobs.json');
 const maps = load<MapSummary[]>('maps-index.json');
+const items = load<Item[]>('items.json');
 
 describe('extracted monsters', () => {
   it('has Classic Ligator stats', () => {
@@ -57,5 +59,21 @@ describe('extracted maps', () => {
 
   it('places the swamp stage on the ground', () => {
     expect(load<MapDetail>('maps/010003090.json').stage?.characterY).toBe(128);
+  });
+
+  it('has a picture of every monster on a map, flying ones included', () => {
+    const shown = new Set(maps.flatMap((map) => map.spawnCounts.map(([id]) => id)));
+    expect([...shown].filter((id) => !fs.existsSync(path.join(DATA, 'img', 'mobs', String(id), 'icon.png')))).toEqual([]);
+  });
+});
+
+describe('extracted items', () => {
+  it('marks quest items such as the Alligator Skin Pouch', () => {
+    expect(items.find((item) => item.name === 'Alligator Skin Pouch')?.quest).toBe(true);
+  });
+
+  it('leaves quest items out of the Ligator drop table', () => {
+    const ligatorDrops = realGameData().drops[29].map((entry) => entry.itemId);
+    expect(ligatorDrops).not.toContain(items.find((item) => item.name === 'Alligator Skin Pouch')?.id);
   });
 });

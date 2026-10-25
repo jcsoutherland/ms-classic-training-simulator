@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { defaultCharacter } from '../character/defaults';
-import { loadActiveCharacterId, loadCharacters, newCharacterId, saveActiveCharacterId, saveCharacters, upsertCharacter } from '../character/storage';
+import { loadActiveCharacterId, loadCharacters, newCharacterId, removeCharacter, saveActiveCharacterId, saveCharacters, upsertCharacter } from '../character/storage';
 import type { Character } from '../character/types';
 import { loadSiteData, type SiteData } from '../data/loadGameData';
 
@@ -11,6 +11,7 @@ interface SiteState {
   selectCharacter: (id: string) => void;
   saveCharacter: (character: Character) => Promise<void>;
   addCharacter: () => Promise<void>;
+  deleteCharacter: (id: string) => Promise<void>;
 }
 
 const SiteContext = createContext<SiteState | null>(null);
@@ -64,11 +65,21 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     await saveCharacter(fresh);
   }, [site, saveCharacter]);
 
+  const deleteCharacter = useCallback(async (id: string) => {
+    if (!site) return;
+    const remaining = removeCharacter(characters, id);
+    const next = remaining.length ? remaining : [{ ...defaultCharacter(FIRST_JOB, FIRST_LEVEL, { data: site.game, guides: site.guides, items: site.itemList }), id: newCharacterId() }];
+    setCharacters(next);
+    setActiveId(next[0].id);
+    await saveCharacters(next);
+    await saveActiveCharacterId(next[0].id);
+  }, [site, characters]);
+
   const value = useMemo(() => {
     if (!site) return null;
     const character = characters.find((candidate) => candidate.id === activeId) ?? characters[0];
-    return character ? { site, characters, character, selectCharacter, saveCharacter, addCharacter } : null;
-  }, [site, characters, activeId, selectCharacter, saveCharacter, addCharacter]);
+    return character ? { site, characters, character, selectCharacter, saveCharacter, addCharacter, deleteCharacter } : null;
+  }, [site, characters, activeId, selectCharacter, saveCharacter, addCharacter, deleteCharacter]);
 
   if (problem) return <main className="wrap page-head"><h1>Something went wrong</h1><p>{problem}</p></main>;
   if (!value) return <main className="wrap page-head"><h1>Loading game data…</h1><p>This takes a moment the first time.</p></main>;

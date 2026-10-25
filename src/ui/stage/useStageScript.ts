@@ -3,7 +3,7 @@ import { buildLook, frameUrl, lookKey, type Look } from '../../avatar/look';
 import { cachedImage, loadImage } from '../../avatar/spriteCache';
 import type { Character } from '../../character/types';
 import { imageUrl, loadAnimations, type SiteData } from '../../data/loadGameData';
-import type { Skill, SpriteFrame } from '../../data/types';
+import type { Animations, Skill, SpriteFrame } from '../../data/types';
 import { weaponActions } from '../../sim/attackTime';
 import { learnedLevel } from '../../sim/buffs';
 import { characterSkills } from '../../sim/simulateMap';
@@ -28,27 +28,38 @@ export interface StageState {
   problem: string | null;
 }
 
+const EMPTY_STAGE: StageState = { scene: null, script: null, characterReady: false, problem: null };
+const builtStages = new Map<string, StageState>();
+
 export function useStageScript(request: StageRequest): StageState {
-  const [state, setState] = useState<StageState>({ scene: null, script: null, characterReady: false, problem: null });
+  const key = requestKey(request);
+  const [state, setState] = useState<StageState>(() => builtStages.get(key) ?? EMPTY_STAGE);
   const latest = useRef(request);
   latest.current = request;
-  const key = requestKey(request);
   useEffect(() => {
+    const built = builtStages.get(key);
+    if (built?.characterReady) {
+      setState(built);
+      return undefined;
+    }
     let cancelled = false;
     const current = latest.current;
-    const fail = (error: unknown) => {
-      if (!cancelled) setState((previous) => ({ ...previous, problem: error instanceof Error ? error.message : String(error) }));
+    const show = (next: StageState) => {
+      if (next.script) builtStages.set(key, next);
+      if (!cancelled) setState(next);
     };
     buildScene(current)
       .then(({ scene, script }) => {
         if (cancelled) return null;
-        setState({ scene, script, characterReady: false, problem: null });
-        return loadBody(current, script, () => cancelled);
+        show({ scene, script, characterReady: false, problem: null });
+        return loadBody(current, script, () => cancelled).then((body) => (body ? { scene, script: { ...script, ...body } } : null));
       })
-      .then((body) => {
-        if (!cancelled && body) setState((previous) => (previous.script ? { ...previous, script: { ...previous.script, ...body }, characterReady: true } : previous));
+      .then((ready) => {
+        if (ready) show({ ...ready, characterReady: true, problem: null });
       })
-      .catch(fail);
+      .catch((error: unknown) => {
+        if (!cancelled) setState((previous) => ({ ...previous, problem: error instanceof Error ? error.message : String(error) }));
+      });
     return () => { cancelled = true; };
   }, [key]);
   return state;
@@ -65,8 +76,9 @@ async function buildScene(request: StageRequest): Promise<{ scene: ImageBitmap; 
   const skills = characterSkills(character, site.game);
   const mainSkill = mainAttackSkill(character, skills);
   const skillAnimations = mainSkill ? animations.skills[mainSkill.id] ?? {} : {};
-  const monsterId = monster && animations.mobs[monster.id]?.stand ? monster.id : SLIME;
+  const monsterId = monster && idleAnimation(animations.mobs[monster.id] ?? {}) ? monster.id : SLIME;
   const monsterAnimations = animations.mobs[monsterId] ?? {};
+  const idle = idleAnimation(monsterAnimations);
   const bulletId = BULLET_FOR_WEAPON[character.weaponType];
   const isSpell = mainSkill?.levels[0].magic !== undefined;
   const [scene, attackEffect, hitSpark, projectile, buffs, monsterStand, monsterHit, monsterDie] = await Promise.all([
@@ -75,7 +87,7 @@ async function buildScene(request: StageRequest): Promise<{ scene: ImageBitmap; 
     framesFrom(`img/skills/${mainSkill?.id}`, 'hit', skillAnimations.hit),
     skillAnimations.ball ? framesFrom(`img/skills/${mainSkill?.id}`, 'ball', skillAnimations.ball) : isSpell ? Promise.resolve([]) : framesFrom(`img/bullets/${bulletId}`, 'bullet', animations.bullets[bulletId]),
     Promise.all(buffSkills(character, skills).map((skill) => framesFrom(`img/skills/${skill.id}`, 'effect', animations.skills[skill.id]?.effect))),
-    monster ? framesFrom(`img/mobs/${monsterId}`, monsterAnimations.stand ? 'stand' : 'move', monsterAnimations.stand ?? monsterAnimations.move) : Promise.resolve([]),
+    monster && idle ? framesFrom(`img/mobs/${monsterId}`, idle, monsterAnimations[idle]) : Promise.resolve([]),
     monster ? framesFrom(`img/mobs/${monsterId}`, 'hit1', monsterAnimations.hit1) : Promise.resolve([]),
     monster ? framesFrom(`img/mobs/${monsterId}`, 'die1', monsterAnimations.die1) : Promise.resolve([]),
   ]);
@@ -99,6 +111,10 @@ async function loadBody(request: StageRequest, script: StageScript<ImageBitmap>,
   const stand = await bodyFrames(look, 'stand1', site.game.actions.stand1 ?? [500, 500, 500], isCancelled);
   const attack = script.monster ? await bodyFrames(look, attackAction, site.game.actions[attackAction] ?? [300, 150, 350], isCancelled) : [];
   return isCancelled() ? null : { stand, attack };
+}
+
+function idleAnimation(animations: Animations): string | null {
+  return ['stand', 'move', 'fly'].find((name) => animations[name]?.length) ?? null;
 }
 
 function mainAttackSkill(character: Character, skills: Skill[]): Skill | null {

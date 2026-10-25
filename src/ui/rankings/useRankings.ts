@@ -13,7 +13,7 @@ export interface RankingsState {
   slow: boolean;
 }
 
-export function useRankings(game: GameData, character: Character, players: number, goalLevel: number): RankingsState {
+export function useRankings(game: GameData, character: Character | null, players: number, goalLevel: number): RankingsState {
   const worker = useRef<Worker | null>(null);
   const latestRequest = useRef(0);
   const [state, setState] = useState<RankingsState>({ rankings: null, problem: null, slow: false });
@@ -33,6 +33,10 @@ export function useRankings(game: GameData, character: Character, players: numbe
   useEffect(() => {
     const requestId = latestRequest.current + 1;
     latestRequest.current = requestId;
+    if (!character) {
+      setState({ rankings: null, problem: null, slow: false });
+      return undefined;
+    }
     const request: RankingsRequest = { requestId, dataUrl: new URL(DATA_URL, window.location.href).href, game, character, players, goalLevel };
     worker.current?.postMessage(request);
     const timer = window.setTimeout(() => {

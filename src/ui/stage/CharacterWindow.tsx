@@ -8,11 +8,11 @@ const SCENE_HEIGHT = 160;
 
 interface CharacterWindowProps extends StageRequest {
   attacking: boolean;
-  caption: string;
   label: string;
+  note?: string;
 }
 
-export function CharacterWindow({ attacking, caption, label, ...request }: CharacterWindowProps) {
+export function CharacterWindow({ attacking, label, note, ...request }: CharacterWindowProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const { scene, script, characterReady, problem } = useStageScript(request);
 
@@ -21,14 +21,13 @@ export function CharacterWindow({ attacking, caption, label, ...request }: Chara
     if (!context || !script) return;
     context.imageSmoothingEnabled = false;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const started = performance.now();
     let frameRequest = 0;
     const draw = (now: number) => {
       context.clearRect(0, 0, SCENE_WIDTH, SCENE_HEIGHT);
       if (scene) context.drawImage(scene, 0, 0);
       drawShadow(context, script.feet.x, script.feet.y);
       if (script.monster) drawShadow(context, script.monster.x, script.monster.y);
-      for (const command of stageFrame(script, reduceMotion ? 0 : now - started, attacking)) {
+      for (const command of stageFrame(script, reduceMotion ? 0 : now, attacking)) {
         context.save();
         context.globalAlpha = command.alpha;
         if (command.flip) {
@@ -48,10 +47,10 @@ export function CharacterWindow({ attacking, caption, label, ...request }: Chara
     <figure className="stage-figure">
       <div className="stage">
         <canvas ref={canvas} className="pixel" width={SCENE_WIDTH} height={SCENE_HEIGHT} role="img" aria-label={label} />
-        {!characterReady && !problem && <p className="stage-note">Drawing your character. A new look can take up to a minute the first time.</p>}
+        {note && <p className="stage-note">{note}</p>}
+        {!note && !characterReady && !problem && <p className="stage-note">Drawing your character. A new look can take up to a minute the first time.</p>}
         {problem && <p className="stage-note">{problem} Your numbers are still correct.</p>}
       </div>
-      <figcaption className="muted">{caption}</figcaption>
     </figure>
   );
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { JOB_IDS, jobName, minimumLevel } from '../../character/jobs';
 import type { Character } from '../../character/types';
 import type { SiteData } from '../../data/loadGameData';
@@ -9,20 +10,22 @@ interface DetailsFormProps {
   draft: Character;
   site: SiteData;
   onChange: (character: Character) => void;
-  onSave: () => void;
-  saved: boolean;
+  saveStatus: ReactNode;
 }
 
 const STATS: Stat[] = ['STR', 'DEX', 'INT', 'LUK'];
 
-export function DetailsForm({ draft, site, onChange, onSave, saved }: DetailsFormProps) {
+export function DetailsForm({ draft, site, onChange, saveStatus }: DetailsFormProps) {
   const change = (patch: Partial<Character>) => onChange({ ...draft, ...patch });
   const weapon = draft.weaponId !== null ? site.game.weapons.get(draft.weaponId) : undefined;
   const weaponName = draft.weaponId !== null ? site.items.get(draft.weaponId)?.name : undefined;
   const isMagician = Math.floor(draft.jobId / 100) === 2;
   return (
-    <form className="panel details" aria-labelledby="details-heading" onSubmit={(event) => { event.preventDefault(); onSave(); }}>
-      <h2 id="details-heading">Check the details</h2>
+    <form className="panel details" aria-labelledby="details-heading" onSubmit={(event) => event.preventDefault()}>
+      <div className="details-head">
+        <h2 id="details-heading">Check the details</h2>
+        {saveStatus}
+      </div>
       <p className="hint">Copy these from your Stats window with no buffs on. Use the final numbers the game shows, with your gear on.</p>
       <fieldset>
         <legend>About {draft.name || 'your character'}</legend>
@@ -60,11 +63,7 @@ export function DetailsForm({ draft, site, onChange, onSave, saved }: DetailsFor
         <p className="hint first">{draft.equipment.length ? draft.equipment.map((id) => site.items.get(id)?.name ?? `Item ${id}`).join(', ') : 'No equipment recorded yet.'}</p>
         <p className="hint">Your Stats window already counts your gear, so this only changes how your character looks.</p>
       </fieldset>
-      <div className="form-actions">
-        <button className="button" type="submit">Save {draft.name || 'character'}</button>
-        <a className="button ghost" href="#/rankings">See the best maps for {draft.name || 'your character'}</a>
-        {saved && <span className="saved" role="status">Saved in this browser.</span>}
-      </div>
+      <p><a className="button ghost" href="#/rankings">See the best maps for {draft.name || 'your character'}</a></p>
     </form>
   );
 }

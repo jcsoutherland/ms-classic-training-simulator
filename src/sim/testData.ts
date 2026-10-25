@@ -20,6 +20,7 @@ export function realGameData(): GameData {
     maps: load('maps-index.json'),
     mesos: load('mesos.json'),
     drops: load('drops.json'),
+    items: load('items.json'),
   });
 }
 

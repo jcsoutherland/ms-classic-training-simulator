@@ -29,7 +29,7 @@ function Shell() {
     <>
       <header className="bar">
         <div className="wrap bar-inner">
-          <a className="brand" href={routeHref({ page: 'character', mapId: null })}>Classic Training Simulator</a>
+          <a className="brand" href={routeHref({ page: 'character', mapId: null })}><img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" />Classic Training Simulator</a>
           <nav className="nav" aria-label="Main">
             {NAV.map((item) => (
               <a key={item.page} href={routeHref({ page: item.page, mapId: null })} aria-current={route.page === item.page ? 'page' : undefined}>{item.label}</a>

@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { Animations, Item, Manifest, MapSummary } from '../../src/data/types';
 import { DEFAULT_GAME_DATA, GameFiles, childNodes, walk } from './gameFiles';
 import { writeWebp } from './image/encode';
-import { readActionDelays, readItemIcon, readItems, readWeapons } from './extractors/items';
+import { readActionDelays, readItemIcon, readItems, readQuestItemIds, readWeapons } from './extractors/items';
 import { mapIds, readMap } from './extractors/maps';
 import { readMobImages, readMobs } from './extractors/mobs';
 import { renderScene, TOWNS, townCamera } from './extractors/scenes';
@@ -91,7 +91,7 @@ function extractSkills(files: GameFiles, strings: Strings, output: Output): numb
 
 function extractItems(files: GameFiles, strings: Strings, output: Output): number {
   logStep('Items, weapons and animation timings');
-  const items: Item[] = readItems(strings);
+  const items: Item[] = readItems(strings, readQuestItemIds(files));
   let icons = 0;
   for (const item of items) {
     const icon = readItemIcon(files, item.id);

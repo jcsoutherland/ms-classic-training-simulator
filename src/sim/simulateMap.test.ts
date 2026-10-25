@@ -17,9 +17,13 @@ describe('simulateMap on The Swamp of Despair I', () => {
     expect(solo.killsPerHour).toBeLessThan(25000);
   });
 
-  it('gives mostly Ligator kills because Ligators fill the map', () => {
+  it('camps Ligators, the best EXP for this character', () => {
+    expect(solo.mainTarget).toBe(29);
+  });
+
+  it('gives Ligators far more kills than their share of spawn points', () => {
     const ligators = solo.killsByMonster.get(29) ?? 0;
-    expect(ligators / solo.killsPerHour).toBeCloseTo(41 / 63, 2);
+    expect(ligators / solo.killsPerHour).toBeGreaterThan(0.85);
   });
 
   it('earns more EXP per hour with a faster weapon', () => {
@@ -38,6 +42,20 @@ describe('simulateMap on The Swamp of Despair I', () => {
 
   it('records a hit chance for every monster on the map', () => {
     expect([...solo.hitChances.keys()].sort((a, b) => a - b)).toEqual([7, 18, 19, 29]);
+  });
+});
+
+describe('simulateMap on Line 1 <Area 2>', () => {
+  it('camps the many Jr. Wraiths rather than the few Stirges', () => {
+    const jrWraith = [...data.monsters.values()].find((monster) => monster.name === 'Jr. Wraith')?.id;
+    expect(simulateMap(sampleAssassin(), data, realMapDetails('010003063'), 1).mainTarget).toBe(jrWraith);
+  });
+});
+
+describe('simulateMap on a map with one kind of monster', () => {
+  it('only defeats that monster', () => {
+    const wraiths = simulateMap(sampleAssassin({ level: 50, accuracy: 200 }), data, realMapDetails('010003065'), 1);
+    expect([...wraiths.killsByMonster.keys()]).toEqual([43]);
   });
 });
 

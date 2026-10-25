@@ -28,6 +28,7 @@ export function DropLog({ drops, hours, party, mesos, items, itemLinks, missingT
         <div>
           <h2 id="loot-heading">What you'd pick up</h2>
           <p className="hint">{party > 1 ? `Your share of one possible session, split evenly with ${party - 1} other ${party === 2 ? 'player' : 'players'}.` : 'One possible session. Rare finds are outlined in gold.'}</p>
+          <p className="hint">Drop rates come from osmlib, which uses older game data, so they may not match Classic exactly.</p>
         </div>
         <button className="button gold" type="button" onClick={onRollAgain}>Roll again</button>
       </div>

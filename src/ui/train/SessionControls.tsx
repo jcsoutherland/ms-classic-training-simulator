@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { MAX_LEVEL } from '../../sim/exp';
 import { MAX_HOURS, MIN_HOURS } from '../../sim/session';
 import { PartyPicker } from '../shared/PartyPicker';
@@ -16,9 +17,10 @@ interface SessionControlsProps {
   note: string;
   onChange: (inputs: SessionInputs) => void;
   onTidy: () => void;
+  extra?: ReactNode;
 }
 
-export function SessionControls({ inputs, level, note, onChange, onTidy }: SessionControlsProps) {
+export function SessionControls({ inputs, level, note, onChange, onTidy, extra }: SessionControlsProps) {
   const change = (patch: Partial<SessionInputs>) => onChange({ ...inputs, ...patch });
   return (
     <section className="panel session" aria-label="How long and with whom">
@@ -51,6 +53,7 @@ export function SessionControls({ inputs, level, note, onChange, onTidy }: Sessi
           </>
         )}
         <PartyPicker value={inputs.party} onChange={(party) => change({ party })} />
+        {extra}
       </div>
       <p className="session-note">{note}</p>
     </section>

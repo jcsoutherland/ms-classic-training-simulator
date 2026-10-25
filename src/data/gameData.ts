@@ -1,4 +1,4 @@
-import type { DropTables, Job, MapDetail, MapSummary, MesoRange, Monster, Skill, Weapon } from './types';
+import type { DropTables, Item, Job, MapDetail, MapSummary, MesoRange, Monster, Skill, Weapon } from './types';
 
 export interface GameData {
   monsters: Map<number, Monster>;
@@ -19,6 +19,7 @@ export interface RawGameData {
   maps: MapSummary[];
   mesos: Record<number, MesoRange>;
   drops: DropTables;
+  items: Item[];
 }
 
 export type MapDetails = (mapId: string) => MapDetail;
@@ -32,8 +33,13 @@ export function indexGameData(raw: RawGameData): GameData {
     weapons: new Map(raw.weapons.map((weapon) => [weapon.id, weapon])),
     maps: raw.maps,
     mesos: raw.mesos,
-    drops: raw.drops,
+    drops: withoutQuestItems(raw.drops, raw.items),
   };
+}
+
+function withoutQuestItems(drops: DropTables, items: Item[]): DropTables {
+  const questIds = new Set(items.filter((item) => item.quest).map((item) => item.id));
+  return Object.fromEntries(Object.entries(drops).map(([monsterId, table]) => [monsterId, table.filter((entry) => !questIds.has(entry.itemId))]));
 }
 
 export function jobLine(jobId: number): number[] {

@@ -105,3 +105,8 @@ Read these before starting any work:
 ## Lessons learned
 <!-- Claude adds a rule here after each correction (see Self-Improvement Loop). -->
 - When interviewing the user about a plan, ask one question per message and don't offer a recommended or example answer.
+- Keep pages dense: the key numbers for a page should fit in one screen at 1080p. Don't add captions or summary lines
+  that repeat numbers shown elsewhere on the page.
+- All buttons share one shape (the `.button` corners). Don't introduce round pills or other button styles.
+- Characters save as the player edits. Don't add Save buttons.
+- When the user asks for options on a layout, show visual mockups to pick from rather than describing them.

@@ -1,15 +1,16 @@
 import type { Character } from '../character/types';
 import { jobLine, type GameData } from '../data/gameData';
-import type { MapDetail, Monster, Skill } from '../data/types';
+import type { MapDetail, Monster, Skill, SpawnPoint } from '../data/types';
 import { hitChance } from './accuracy';
 import { averageDamagePerTarget, characterAttacks, type Attack } from './attacks';
 import { buffTotals, learnedLevel, usableWithWeapon, type BuffTotals } from './buffs';
 import { averagePhysicalHit } from './damage';
 import { expPerMember } from './party';
 import { capacityScale, spawnsPerHour } from './spawns';
-import { groupSpawns, secondsBetweenGroups } from './travel';
+import { campedGroups, groupSpawns, secondsBetweenGroups, type SpawnGroup } from './travel';
 
 const BASE_SPEED = 100;
+const SIDE_MONSTER_WEIGHT = 0.5;
 
 export interface MapSimulation {
   mapId: string;
@@ -20,6 +21,7 @@ export interface MapSimulation {
   mesosPerHour: number;
   limitedBy: 'killing' | 'respawns';
   hitChances: Map<number, number>;
+  mainTarget: number | null;
 }
 
 export function characterSkills(character: Character, data: GameData): Skill[] {
@@ -46,35 +48,56 @@ export function simulateMap(character: Character, data: GameData, detail: MapDet
   const accuracy = character.accuracy + buffs.accuracyBonus;
   const regular = detail.spawns.filter((spawn) => spawn.respawnSeconds <= 0);
   const reach = attacks.reduce((total, attack) => total + attack.reach * attack.share, 0);
-  const groups = groupSpawns(regular.length ? regular : detail.spawns, reach);
-  const alivePerGroup = Math.max(1, groups.reduce((total, group) => total + group.points, 0) / Math.max(1, groups.length) * capacityScale(players));
-  const hitChances = new Map<number, number>();
-  const secondsPerKill = new Map<number, number>();
-  for (const id of new Set(detail.spawns.map((spawn) => spawn.mobId))) {
-    const monster = data.monsters.get(id);
-    if (!monster) continue;
-    const chance = hitChance(accuracy, character.level, monster.level, monster.avoid);
-    hitChances.set(id, chance);
-    const seconds = killSeconds(attacks, character, monster, buffs, finalAttackBonus(character, skills, buffs), chance, alivePerGroup);
-    if (Number.isFinite(seconds)) secondsPerKill.set(id, seconds);
-  }
-  const shares = spawnShares(detail, secondsPerKill);
-  const travelPerKill = secondsBetweenGroups(groups, BASE_SPEED + buffs.movementBonus) / alivePerGroup;
-  const averageSeconds = [...shares].reduce((total, [id, share]) => total + share * (secondsPerKill.get(id) ?? 0), 0) + travelPerKill;
-  const capacity = averageSeconds > 0 ? players * 3600 / averageSeconds : 0;
-  const supply = spawnsPerHour(detail.spawns.filter((spawn) => shares.has(spawn.mobId)), players);
-  const killsPerHour = Math.min(capacity, supply);
-  const killsByMonster = new Map([...shares].map(([id, share]) => [id, killsPerHour * share]));
-  return {
-    mapId: detail.id,
-    players,
-    killsPerHour,
-    killsByMonster,
-    expPerHour: sumOverMonsters(killsByMonster, (id) => expPerMember(data.monsters.get(id)?.exp ?? 0, players)),
-    mesosPerHour: sumOverMonsters(killsByMonster, (id) => averageMesos(data, id)) / players,
-    limitedBy: capacity > supply ? 'respawns' : 'killing',
-    hitChances,
+  const allGroups = groupSpawns(regular.length ? regular : detail.spawns, reach);
+  const present = [...new Set(detail.spawns.map((spawn) => spawn.mobId))]
+    .map((id) => data.monsters.get(id))
+    .filter((monster): monster is Monster => monster !== undefined);
+  const hitChances = new Map(present.map((monster) => [monster.id, hitChance(accuracy, character.level, monster.level, monster.avoid)]));
+  const bonusPerTarget = finalAttackBonus(character, skills, buffs);
+  const timesToKill = (alivePerGroup: number) => {
+    const seconds = new Map<number, number>();
+    for (const monster of present) {
+      const time = killSeconds(attacks, character, monster, buffs, bonusPerTarget, hitChances.get(monster.id) ?? 0, alivePerGroup);
+      if (Number.isFinite(time)) seconds.set(monster.id, time);
+    }
+    return seconds;
   };
+  const campOn = (mainTarget: number | null): MapSimulation => {
+    const groups = mainTarget === null ? allGroups : campedGroups(allGroups, mainTarget);
+    const alivePerGroup = alivePer(groups, players);
+    const secondsPerKill = timesToKill(alivePerGroup);
+    const campedSpawns = groups.flatMap((group) => group.spawns).filter((spawn) => secondsPerKill.has(spawn.mobId));
+    const weightOf = (mobId: number) => (mainTarget === null || mobId === mainTarget ? 1 : SIDE_MONSTER_WEIGHT);
+    const shares = spawnShares(campedSpawns, weightOf);
+    const travelPerKill = secondsBetweenGroups(groups, BASE_SPEED + buffs.movementBonus) / alivePerGroup;
+    const averageSeconds = [...shares].reduce((total, [id, share]) => total + share * (secondsPerKill.get(id) ?? 0), 0) + travelPerKill;
+    const capacity = averageSeconds > 0 ? players * 3600 / averageSeconds : 0;
+    const targetSpawns = campedSpawns.filter((spawn) => weightOf(spawn.mobId) === 1);
+    const sideSpawns = campedSpawns.filter((spawn) => weightOf(spawn.mobId) !== 1);
+    const supply = spawnsPerHour(targetSpawns, players) + SIDE_MONSTER_WEIGHT * spawnsPerHour(sideSpawns, players);
+    const killsPerHour = Math.min(capacity, supply);
+    const killsByMonster = new Map([...shares].map(([id, share]) => [id, killsPerHour * share]));
+    return {
+      mapId: detail.id,
+      players,
+      killsPerHour,
+      killsByMonster,
+      expPerHour: sumOverMonsters(killsByMonster, (id) => expPerMember(data.monsters.get(id)?.exp ?? 0, players)),
+      mesosPerHour: sumOverMonsters(killsByMonster, (id) => averageMesos(data, id)) / players,
+      limitedBy: capacity > supply ? 'respawns' : 'killing',
+      hitChances,
+      mainTarget,
+    };
+  };
+  const candidates = [...timesToKill(alivePer(allGroups, players)).keys()];
+  if (!candidates.length) return campOn(null);
+  const best = candidates.map(campOn).reduce((chosen, option) => (option.expPerHour > chosen.expPerHour ? option : chosen));
+  return { ...best, mainTarget: mostDefeated(best.killsByMonster) };
+}
+
+function mostDefeated(killsByMonster: Map<number, number>): number | null {
+  const [top] = [...killsByMonster].sort((a, b) => b[1] - a[1]);
+  return top?.[0] ?? null;
 }
 
 function killSeconds(attacks: Attack[], character: Character, monster: Monster, buffs: BuffTotals, bonusPerTarget: number, chance: number, alivePerGroup: number): number {
@@ -98,9 +121,14 @@ function finalAttackBonus(character: Character, skills: Skill[], buffs: BuffTota
   return (level.chance ?? 0) / 100 * averagePhysicalHit(character.attackMin, character.attackMax, level.damage, boost);
 }
 
-function spawnShares(detail: MapDetail, killable: Map<number, number>): Map<number, number> {
+function alivePer(groups: SpawnGroup[], players: number): number {
+  const points = groups.reduce((total, group) => total + group.points, 0);
+  return Math.max(1, points / Math.max(1, groups.length) * capacityScale(players));
+}
+
+function spawnShares(spawns: SpawnPoint[], weightOf: (mobId: number) => number): Map<number, number> {
   const counts = new Map<number, number>();
-  for (const spawn of detail.spawns) if (killable.has(spawn.mobId)) counts.set(spawn.mobId, (counts.get(spawn.mobId) ?? 0) + 1);
+  for (const spawn of spawns) counts.set(spawn.mobId, (counts.get(spawn.mobId) ?? 0) + weightOf(spawn.mobId));
   const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
   return new Map([...counts].map(([id, count]) => [id, count / Math.max(1, total)]));
 }

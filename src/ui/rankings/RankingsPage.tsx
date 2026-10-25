@@ -1,30 +1,36 @@
 import { useState } from 'react';
 import { jobName, startingTown } from '../../character/jobs';
+import type { Character } from '../../character/types';
+import type { SiteData } from '../../data/loadGameData';
 import { accuracyForHitChance, VIABLE_HIT_CHANCE } from '../../sim/accuracy';
 import { MAX_LEVEL } from '../../sim/exp';
-import type { LeftOutMap } from '../../sim/rankMaps';
+import type { LeftOutMap, RankedMap, Rankings } from '../../sim/rankMaps';
 import { effectiveAccuracy } from '../../sim/simulateMap';
+import { ComparePicker } from '../shared/ComparePicker';
 import { formatPercent } from '../shared/format';
 import { PartyPicker } from '../shared/PartyPicker';
+import { useCompare } from '../shared/useCompare';
 import { useSite } from '../SiteContext';
 import { CharacterWindow } from '../stage/CharacterWindow';
-import { RankingsTable } from './RankingsTable';
+import { RankingsTable, type LikelyDrop } from './RankingsTable';
 import { useRankings } from './useRankings';
 import './rankings.css';
 
-const DROP_ICONS = 3;
+const EQUIPMENT_ICONS = 4;
+const SHARED_TOP = 10;
 
 export function RankingsPage() {
   const { site, character } = useSite();
+  const compare = useCompare();
   const [party, setParty] = useState(1);
   const [goalText, setGoalText] = useState(String(Math.min(MAX_LEVEL, character.level + 5)));
   const goalLevel = Math.min(MAX_LEVEL, Math.max(character.level + 1, Math.round(Number(goalText) || character.level + 1)));
   const { rankings, problem, slow } = useRankings(site.game, character, party, goalLevel);
-  const dropIcons = (mapId: string) => {
-    const map = site.game.maps.find((candidate) => candidate.id === mapId);
-    const entries = (map?.spawnCounts ?? []).flatMap(([id]) => site.game.drops[id] ?? []);
-    return [...new Set(entries.sort((a, b) => b.chance - a.chance).map((entry) => entry.itemId))].slice(0, DROP_ICONS);
-  };
+  const compared = useRankings(site.game, compare.compared, party, goalLevel);
+  const likelyEquipment = (entry: RankedMap) => equipmentFor(entry, site);
+  const tableProps = { monsters: site.game.monsters, items: site.items, likelyEquipment, party, goalLevel };
+  const comparing = compare.compared !== null;
+  const shared = rankings && compared.rankings ? sharedTopMaps(rankings, compared.rankings) : new Set<string>();
   return (
     <main className="wrap rankings">
       <div className="page-head rankings-head">
@@ -39,25 +45,65 @@ export function RankingsPage() {
               onChange={(event) => setGoalText(event.target.value)} onBlur={() => setGoalText(String(goalLevel))} />
           </div>
           <PartyPicker value={party} onChange={setParty} />
+          <ComparePicker compare={compare} />
         </div>
       </div>
-      {problem && <p className="warn">{problem}</p>}
+      {(problem ?? compared.problem) && <p className="warn">{problem ?? compared.problem}</p>}
       {!rankings && slow && (
         <CharacterWindow character={character} site={site} sceneFile={`town-${startingTown(character.jobId)}`} feet={{ x: 110, y: 128 }}
-          monster={{ id: 7, at: { x: 240, y: 128 } }} castsToKill={1} attacking caption="Still working: this takes a little longer the first time." label="Your character warming up" />
+          monster={{ id: 7, at: { x: 240, y: 128 } }} castsToKill={1} attacking note="Still working: this takes a little longer the first time." label="Your character warming up" />
+      )}
+      {rankings && !comparing && <RankingsTable ranked={rankings.ranked} {...tableProps} />}
+      {rankings && comparing && (
+        <>
+          <p className="hint first">A gold edge marks a map in both top {SHARED_TOP}, so it suits you both.</p>
+          <div className="boards">
+            <div>
+              <p className="board-title">{character.name}, level {character.level} {jobName(character.jobId)}</p>
+              <RankingsTable ranked={rankings.ranked} {...tableProps} compact shared={shared} />
+            </div>
+            <div>
+              <p className="board-title compare">{compare.compared?.name}</p>
+              {compared.rankings ? <RankingsTable ranked={compared.rankings.ranked} {...tableProps} compact shared={shared} /> : <p className="hint">Working out their maps…</p>}
+            </div>
+          </div>
+        </>
       )}
       {rankings && (
         <>
-          <RankingsTable ranked={rankings.ranked} monsters={site.game.monsters} dropIcons={dropIcons} party={party} goalLevel={goalLevel} />
           <p className="muted small">Time to your goal assumes your stats, skills and gear stay as they are now. Update your character as you level for better estimates.</p>
-          <details className="left-out">
-            <summary>Why some maps aren't listed ({rankings.leftOut.length} left out)</summary>
-            <ul>{rankings.leftOut.slice(0, 40).map((entry) => <li key={entry.map.id}>{leftOutReason(entry, character.level, effectiveAccuracy(character, site.game))}</li>)}</ul>
-          </details>
+          <LeftOut rankings={rankings} character={character} site={site} />
         </>
       )}
     </main>
   );
+}
+
+function LeftOut({ rankings, character, site }: { rankings: Rankings; character: Character; site: SiteData }) {
+  const accuracy = effectiveAccuracy(character, site.game);
+  return (
+    <details className="left-out">
+      <summary>Why some maps aren't listed ({rankings.leftOut.length} left out)</summary>
+      <ul>{rankings.leftOut.slice(0, 40).map((entry) => <li key={entry.map.id}>{leftOutReason(entry, character.level, accuracy)}</li>)}</ul>
+    </details>
+  );
+}
+
+function equipmentFor(entry: RankedMap, site: SiteData): LikelyDrop[] {
+  const perHour = new Map<number, number>();
+  for (const [monsterId, kills] of entry.simulation.killsByMonster) {
+    for (const drop of site.game.drops[monsterId] ?? []) {
+      if (site.items.get(drop.itemId)?.category !== 'equip') continue;
+      perHour.set(drop.itemId, (perHour.get(drop.itemId) ?? 0) + kills * drop.chance);
+    }
+  }
+  return [...perHour].map(([itemId, rate]) => ({ itemId, perHour: rate })).sort((a, b) => b.perHour - a.perHour).slice(0, EQUIPMENT_ICONS);
+}
+
+function sharedTopMaps(mine: Rankings, theirs: Rankings): Set<string> {
+  const top = (rankings: Rankings) => new Set(rankings.ranked.slice(0, SHARED_TOP).map((entry) => entry.map.id));
+  const theirTop = top(theirs);
+  return new Set([...top(mine)].filter((id) => theirTop.has(id)));
 }
 
 function leftOutReason(entry: LeftOutMap, level: number, accuracy: number): string {

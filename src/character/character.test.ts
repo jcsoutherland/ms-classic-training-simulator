@@ -7,7 +7,7 @@ import { defaultCharacter } from './defaults';
 import { statsAtLevel } from './guideBuild';
 import { minimumLevel, startingTown } from './jobs';
 import { accuracyFor, avoidFor, skillMultiplierScale, statsWindowRange } from './statsWindow';
-import { upsertCharacter } from './storage';
+import { removeCharacter, upsertCharacter } from './storage';
 
 const DATA = fileURLToPath(new URL('../../public/data/', import.meta.url));
 const guides = JSON.parse(fs.readFileSync(DATA + 'guides.json', 'utf8')) as Guide[];
@@ -83,5 +83,13 @@ describe('upsertCharacter', () => {
   it('replaces a saved character with the same id', () => {
     const assassin = defaultCharacter(410, 34, { data, guides, items });
     expect(upsertCharacter([assassin], { ...assassin, level: 35 })[0].level).toBe(35);
+  });
+});
+
+describe('removeCharacter', () => {
+  it('keeps every other saved character', () => {
+    const assassin = { ...defaultCharacter(410, 34, { data, guides, items }), id: 'assassin' };
+    const hunter = { ...defaultCharacter(310, 34, { data, guides, items }), id: 'hunter' };
+    expect(removeCharacter([assassin, hunter], 'assassin').map((character) => character.id)).toEqual(['hunter']);
   });
 });

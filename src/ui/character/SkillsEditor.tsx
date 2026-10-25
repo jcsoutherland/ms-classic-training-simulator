@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { jobName } from '../../character/jobs';
 import { REGULAR_ATTACK, type Character } from '../../character/types';
 import { jobLine, type GameData } from '../../data/gameData';
 import { imageUrl } from '../../data/loadGameData';
@@ -24,7 +25,7 @@ export function SkillsEditor({ character, game, onChange }: SkillsEditorProps) {
       <p className="hint first">Set your skill levels, then say how often you use each attack. Buffs you have points in count as always on.</p>
       <div className="pills tabs" role="group" aria-label="Skill tab">
         {jobs.map((candidate) => (
-          <button key={candidate.id} className="pill" type="button" aria-pressed={candidate.id === job?.id} onClick={() => setTab(candidate.id)}>{candidate.name.replace(/ (Skills|Basics|Techniques|Guide|Tricks)$/i, '')}</button>
+          <button key={candidate.id} className="pill" type="button" aria-pressed={candidate.id === job?.id} onClick={() => setTab(candidate.id)}>{jobName(candidate.id)}</button>
         ))}
       </div>
       <ul className="skills">

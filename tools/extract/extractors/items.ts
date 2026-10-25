@@ -11,11 +11,22 @@ const ITEM_FOLDERS: Record<number, string> = { 2: 'Consume', 3: 'Install', 4: 'E
 const BODY_IMAGE = '00002000.img';
 const BODY_FILE = 'Character/Character_000.wz';
 
-export function readItems(strings: Strings): Item[] {
+export function readItems(strings: Strings, questIds: Set<number>): Item[] {
   return [...strings.items.entries()]
     .filter(([, item]) => item.category !== 'cash')
-    .map(([id, item]) => ({ id, name: item.name, category: item.category }))
+    .map(([id, item]): Item => (questIds.has(id) ? { id, name: item.name, category: item.category, quest: true } : { id, name: item.name, category: item.category }))
     .sort((a, b) => a.id - b.id);
+}
+
+export function readQuestItemIds(files: GameFiles): Set<number> {
+  const file = `Item/${ITEM_FOLDERS[4]}/${ITEM_FOLDERS[4]}_000.wz`;
+  const questIds = new Set<number>();
+  for (const imageName of files.packageImageNames(file)) {
+    for (const [key, node] of childNodes(files.image(file, imageName).root)) {
+      if (numberOf((node.info as WzNode | undefined)?.quest) === 1) questIds.add(Number(key));
+    }
+  }
+  return questIds;
 }
 
 export function weaponTypeOf(itemId: number): number {

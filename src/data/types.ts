@@ -112,6 +112,7 @@ export interface Item {
   id: number;
   name: string;
   category: ItemCategory;
+  quest?: true;
 }
 
 export interface Weapon {
