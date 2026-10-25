@@ -21,6 +21,7 @@ export interface RoamingPlan {
   mainTarget: number | null;
   wanderingMonsters: Set<number>;
   seed: number;
+  measuredSeconds?: number;
 }
 
 export interface RoamingResult {
@@ -56,7 +57,8 @@ export function simulateRoaming(plan: RoamingPlan): RoamingResult {
   });
   refill(plan, alive, readyAt, capacity, 0, random);
   wander(plan, alive, claimed, positions, random);
-  const end = WARM_UP_SECONDS + MEASURED_SECONDS;
+  const measured = plan.measuredSeconds ?? MEASURED_SECONDS;
+  const end = WARM_UP_SECONDS + measured;
   let nextTick = RESPAWN_TICK_SECONDS;
   for (;;) {
     const player = players.reduce((soonest, candidate) => (candidate.freeAt < soonest.freeAt ? candidate : soonest));
@@ -77,8 +79,8 @@ export function simulateRoaming(plan: RoamingPlan): RoamingResult {
     }
     startKills(plan, player, now, choice, alive, claimed, positions);
   }
-  const perHour = 3600 / MEASURED_SECONDS;
-  const idle = players.reduce((total, candidate) => total + candidate.idle, 0) / (MEASURED_SECONDS * plan.players);
+  const perHour = 3600 / measured;
+  const idle = players.reduce((total, candidate) => total + candidate.idle, 0) / (measured * plan.players);
   return { killsPerHour: new Map([...kills].map(([id, count]) => [id, count * perHour])), idleShare: idle };
 }
 

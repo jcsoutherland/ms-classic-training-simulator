@@ -4,6 +4,7 @@ import { CharacterPage } from './character/CharacterPage';
 import { RankingsPage } from './rankings/RankingsPage';
 import { routeHref, type Page } from './routes';
 import { SiteProvider, useSite } from './SiteContext';
+import { RoutePage } from './route/RoutePage';
 import { TrainPage } from './train/TrainPage';
 import { useRoute } from './useRoute';
 
@@ -11,6 +12,7 @@ const NAV: { page: Page; label: string }[] = [
   { page: 'character', label: 'Your character' },
   { page: 'train', label: 'Train on a map' },
   { page: 'rankings', label: 'Best maps for you' },
+  { page: 'route', label: 'Plan my route' },
 ];
 
 export function App() {
@@ -44,6 +46,7 @@ function Shell() {
       {route.page === 'character' && <CharacterPage />}
       {route.page === 'train' && <TrainPage key={route.mapId ?? 'default'} mapId={route.mapId} />}
       {route.page === 'rankings' && <RankingsPage />}
+      {route.page === 'route' && <RoutePage />}
     </>
   );
 }

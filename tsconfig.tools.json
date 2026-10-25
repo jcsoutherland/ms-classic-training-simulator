@@ -15,5 +15,5 @@
     "types": ["node"]
   },
   "include": ["tools", "src/sim", "src/data", "src/character"],
-  "exclude": ["src/data/loadGameData.ts", "src/sim/rankings.worker.ts", "src/character/storage.ts"]
+  "exclude": ["src/data/loadGameData.ts", "src/sim/rankings.worker.ts", "src/sim/route.worker.ts", "src/character/storage.ts"]
 }

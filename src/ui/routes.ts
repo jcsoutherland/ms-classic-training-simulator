@@ -1,4 +1,4 @@
-export type Page = 'character' | 'train' | 'rankings';
+export type Page = 'character' | 'train' | 'rankings' | 'route';
 
 export interface Route {
   page: Page;
@@ -11,6 +11,7 @@ export function parseRoute(hash: string): Route {
   const [page, mapId] = hash.replace(/^#\/?/, '').split('/');
   if (page === 'train') return { page: 'train', mapId: mapId || null };
   if (page === 'rankings') return { page: 'rankings', mapId: null };
+  if (page === 'route') return { page: 'route', mapId: null };
   if (page === 'character') return { page: 'character', mapId: null };
   return DEFAULT_ROUTE;
 }

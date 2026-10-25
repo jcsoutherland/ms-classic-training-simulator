@@ -3,7 +3,7 @@ import { isTrainingMap, type GameData, type MapDetails } from '../data/gameData'
 import type { MapSummary } from '../data/types';
 import { hitChance } from './accuracy';
 import { expToReach } from './exp';
-import { effectiveAccuracy, simulateMap, type MapSimulation } from './simulateMap';
+import { effectiveAccuracy, simulateMap, type MapSimulation, type SimulationOptions } from './simulateMap';
 import { assessMap, type Viability } from './viability';
 
 export const MIN_RANKED_MAPS = 5;
@@ -26,7 +26,7 @@ export interface Rankings {
   widened: boolean;
 }
 
-export function rankMaps(character: Character, data: GameData, details: MapDetails, players: number, goalLevel: number): Rankings {
+export function rankMaps(character: Character, data: GameData, details: MapDetails, players: number, goalLevel: number, options: SimulationOptions = {}): Rankings {
   const accuracy = effectiveAccuracy(character, data);
   const expNeeded = expToReach(character.level, character.expPercent, goalLevel);
   const ranked: RankedMap[] = [];
@@ -37,10 +37,10 @@ export function rankMaps(character: Character, data: GameData, details: MapDetai
       leftOut.push({ map, viability });
       continue;
     }
-    const entry = rankedEntry(map, simulateMap(character, data, details(map.id), players), expNeeded);
+    const entry = rankedEntry(map, simulateMap(character, data, details(map.id), players, options), expNeeded);
     if (entry) ranked.push(entry);
   }
-  const extra = ranked.length < MIN_RANKED_MAPS ? bestLowerLevelMaps(leftOut, MIN_RANKED_MAPS - ranked.length, (map) => rankedEntry(map, simulateMap(character, data, details(map.id), players), expNeeded)) : [];
+  const extra = ranked.length < MIN_RANKED_MAPS ? bestLowerLevelMaps(leftOut, MIN_RANKED_MAPS - ranked.length, (map) => rankedEntry(map, simulateMap(character, data, details(map.id), players, options), expNeeded)) : [];
   const extraIds = new Set(extra.map((entry) => entry.map.id));
   const all = [...ranked, ...extra].sort((a, b) => b.simulation.expPerHour - a.simulation.expPerHour);
   return { ranked: all, leftOut: leftOut.filter((entry) => !extraIds.has(entry.map.id)), widened: extra.length > 0 };

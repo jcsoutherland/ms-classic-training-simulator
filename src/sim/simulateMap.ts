@@ -45,7 +45,11 @@ export function attacksToDefeat(character: Character, data: GameData, monster: M
   return damage > 0 ? Math.max(1, Math.ceil(monster.hp / damage)) : Infinity;
 }
 
-export function simulateMap(character: Character, data: GameData, detail: MapDetail, players: number): MapSimulation {
+export interface SimulationOptions {
+  measuredSeconds?: number;
+}
+
+export function simulateMap(character: Character, data: GameData, detail: MapDetail, players: number, settings: SimulationOptions = {}): MapSimulation {
   const skills = characterSkills(character, data);
   const buffs = buffTotals(character, skills);
   const attacks = characterAttacks(character, skills, data.actions);
@@ -70,7 +74,7 @@ export function simulateMap(character: Character, data: GameData, detail: MapDet
   const points = detail.spawns.filter((spawn) => spawn.respawnSeconds <= 0);
   const speed = BASE_SPEED + buffs.movementBonus;
   const wanderingMonsters = new Set(present.filter((monster) => monster.moves).map((monster) => monster.id));
-  const common = { points, routes: routesFor(detail, points, speed), players, walkSpeed: walkPixelsPerSecond(speed), wanderingMonsters, seed: seedFromText(detail.id) };
+  const common = { points, routes: routesFor(detail, points, speed), players, walkSpeed: walkPixelsPerSecond(speed), wanderingMonsters, seed: seedFromText(detail.id), measuredSeconds: settings.measuredSeconds };
   const outcome = (style: FightingStyle, mainTarget: number | null): MapSimulation => {
     const roaming = simulateRoaming({ ...common, ...style, mainTarget });
     const killsByMonster = roaming.killsPerHour;

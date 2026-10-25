@@ -70,6 +70,14 @@ number of hours: kills, EXP, mesos and item drops. Then rank every map that suit
   two ranked tables side by side, with a gold edge on maps in both top 10. Train on a map shows their kills, EXP and
   mesos under yours; drops stay yours.
 
+### 2.3a Plan my route
+- Enter a goal level; the route lists each map to train at, the levels spent there, hours, and job advancements.
+- The character is projected level by level (`src/sim/projectCharacter.ts`): stats, attack, accuracy and gear grow at
+  the class guide's pace from where you are now; new skill points go toward the guide's levels; Stats-window crit is
+  replaced by passives; job advancement at 10 and 30 into the job picked on the page ("Plan to become").
+- Each level ranks maps with the normal rules, trying each usable attack on the top maps. Switch maps when another is
+  at least 25% better, or at least 10% better two levels in a row. The planner uses 8-minute simulated sessions.
+
 ### 2.4 Party prediction
 - Party size N (1–6), with every member a copy of the entered character.
 - All members are on the **same map and share its respawns**, so kills are limited by the map, not multiplied by N.
