@@ -75,8 +75,15 @@ number of hours: kills, EXP, mesos and item drops. Then rank every map that suit
 - The character is projected level by level (`src/sim/projectCharacter.ts`): stats, attack, accuracy and gear grow at
   the class guide's pace from where you are now; new skill points go toward the guide's levels; Stats-window crit is
   replaced by passives; job advancement at 10 and 30 into the job picked on the page ("Plan to become").
-- Each level ranks maps with the normal rules, trying each usable attack on the top maps. Switch maps when another is
-  at least 25% better, or at least 10% better two levels in a row. The planner uses 8-minute simulated sessions.
+- Each level ranks maps with the normal rules, trying each usable attack on the top maps (8-minute simulated sessions).
+- **How you like to play**: Fastest levelling (switch at ≥10% more EXP/h), Swap maps more often (every 3 levels move to
+  the best map), Most mesos (switch at ≥10% more mesos/h), Hunting rare drops (maps with ≥50% of the best EXP/h;
+  score = half EXP, half drop value, both relative to the best; switch at ≥10% better score).
+- **Drop value** (`src/sim/dropValue.ts`, owner's manual weights; no price data: meso.watch forbids copying and NiaDB
+  needs permission): 60% scrolls > Chaos > 10% > 100% (stat order attack, magic attack, crit, LUK, INT, DEX, STR; slot
+  order gloves, weapon, earring, overall), then throwing stars by attack, then class gear by level, class demand
+  (thief > mage > bowman > warrior) and main stat (earrings: crit damage).
+- Each stop lists the next 3 maps under "Other options".
 
 ### 2.4 Party prediction
 - Party size N (1–6), with every member a copy of the entered character.

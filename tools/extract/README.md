@@ -33,8 +33,9 @@ npm run extract -- "C:/Program Files (x86)/Steam/steamapps/common/MapleStory/MSC
 | `ui-layout.json`, `img/ui/`, `equip-prints.json`, `skill-prints.json` | game window art and icon fingerprints for screenshot reading |
 | `manifest.json` | when it ran and how many of each it found |
 
-Drop rates, mesos, item links and class guides come from other sites instead, through `npm run mirror`
-(`tools/mirror/`, one gentle pass, cached in `tools/.cache/`).
+Drop rates come from osmlib through `npm run mirror` (`tools/mirror/`, one gentle pass, cached in `tools/.cache/`).
+Meso ranges, item links and class guides (`mesos.json`, `item-links.json`, `guides.json`) are a fixed snapshot from
+NiaDB and are no longer refreshed: NiaDB's reuse policy asks for permission before mirroring its data.
 
 ## After a patch
 

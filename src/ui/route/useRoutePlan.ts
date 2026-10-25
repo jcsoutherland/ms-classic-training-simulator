@@ -29,7 +29,7 @@ export function useRoutePlan(site: SiteData, character: Character, route: RouteR
     return () => created.terminate();
   }, []);
 
-  const { goalLevel, players, advanceInto } = route;
+  const { goalLevel, players, advanceInto, style } = route;
   useEffect(() => {
     const requestId = latestRequest.current + 1;
     latestRequest.current = requestId;
@@ -39,10 +39,10 @@ export function useRoutePlan(site: SiteData, character: Character, route: RouteR
       dataUrl: new URL(DATA_URL, window.location.href).href,
       sources: { data: site.game, guides: site.guides, items: site.itemList },
       character,
-      route: { goalLevel, players, advanceInto },
+      route: { goalLevel, players, advanceInto, style },
     };
     worker.current?.postMessage(request);
-  }, [site, character, goalLevel, players, advanceInto]);
+  }, [site, character, goalLevel, players, advanceInto, style]);
 
   return state;
 }

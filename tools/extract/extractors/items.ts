@@ -1,4 +1,4 @@
-import type { Item, Weapon } from '../../../src/data/types';
+import type { Item, ItemBonus, Weapon } from '../../../src/data/types';
 import { childNodes, numberOf, type GameFiles, type Sprite } from '../gameFiles';
 import type { WzNode } from '../wz/image';
 import type { Strings } from './strings';
@@ -11,11 +11,40 @@ const ITEM_FOLDERS: Record<number, string> = { 2: 'Consume', 3: 'Install', 4: 'E
 const BODY_IMAGE = '00002000.img';
 const BODY_FILE = 'Character/Character_000.wz';
 
-export function readItems(strings: Strings, questIds: Set<number>): Item[] {
+export function readItems(strings: Strings, questIds: Set<number>, facts: (itemId: number) => Partial<Item>): Item[] {
   return [...strings.items.entries()]
     .filter(([, item]) => item.category !== 'cash')
-    .map(([id, item]): Item => (questIds.has(id) ? { id, name: item.name, category: item.category, quest: true } : { id, name: item.name, category: item.category }))
+    .map(([id, item]): Item => ({ id, name: item.name, category: item.category, ...(questIds.has(id) ? { quest: true as const } : {}), ...facts(id) }))
     .sort((a, b) => a.id - b.id);
+}
+
+const BONUS_FIELDS: [field: string, bonus: ItemBonus][] = [['incSTR', 'STR'], ['incDEX', 'DEX'], ['incINT', 'INT'], ['incLUK', 'LUK'], ['incPAD', 'attack'], ['incWAT', 'attack'], ['incMAD', 'magicAttack'], ['incCRD', 'critDamage']];
+
+export function readItemFacts(files: GameFiles, itemId: number): Partial<Item> {
+  const group = Math.floor(itemId / 1000000);
+  const isStar = Math.floor(itemId / 10000) === 207;
+  if (group !== 1 && !isStar) return {};
+  const info = itemInfo(files, itemId);
+  if (!info) return {};
+  const bonus: Partial<Record<ItemBonus, number>> = {};
+  for (const [field, name] of BONUS_FIELDS) {
+    const value = numberOf(info[field]);
+    if (value) bonus[name] = (bonus[name] ?? 0) + value;
+  }
+  const facts: Partial<Item> = Object.keys(bonus).length ? { bonus } : {};
+  const level = numberOf(info.reqLevel);
+  if (level) facts.requiredLevel = level;
+  const jobs = numberOf(info.reqJob);
+  if (group === 1 && jobs !== undefined && jobs > 0) facts.requiredJobs = jobs;
+  return facts;
+}
+
+function itemInfo(files: GameFiles, itemId: number): WzNode | undefined {
+  const location = iconLocation(itemId);
+  if (!location || !files.hasImage(location.file, location.image)) return undefined;
+  const source = files.image(location.file, location.image);
+  const node = location.child ? source.root[location.child] as WzNode | undefined : source.root;
+  return node?.info as WzNode | undefined;
 }
 
 export function readQuestItemIds(files: GameFiles): Set<number> {

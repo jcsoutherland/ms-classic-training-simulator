@@ -116,7 +116,12 @@ export interface Item {
   name: string;
   category: ItemCategory;
   quest?: true;
+  requiredLevel?: number;
+  requiredJobs?: number;
+  bonus?: Partial<Record<ItemBonus, number>>;
 }
+
+export type ItemBonus = 'STR' | 'DEX' | 'INT' | 'LUK' | 'attack' | 'magicAttack' | 'critDamage';
 
 export interface Weapon {
   id: number;

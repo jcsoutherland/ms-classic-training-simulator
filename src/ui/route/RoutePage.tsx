@@ -3,7 +3,7 @@ import { jobName } from '../../character/jobs';
 import type { Character } from '../../character/types';
 import { imageUrl, meowdbMonsterUrl, type SiteData } from '../../data/loadGameData';
 import { MAX_LEVEL } from '../../sim/exp';
-import type { RoutePlan, RouteStop } from '../../sim/planRoute';
+import type { PlayStyle, RouteOption, RoutePlan, RouteStop } from '../../sim/planRoute';
 import { routeHref } from '../routes';
 import { formatHours, formatNumber } from '../shared/format';
 import { PartyPicker } from '../shared/PartyPicker';
@@ -15,6 +15,12 @@ import { useRoutePlan } from './useRoutePlan';
 import './route.css';
 
 const GOAL_DELAY_MILLISECONDS = 500;
+const STYLES: [style: PlayStyle, label: string, rule: string][] = [
+  ['fastest', 'Fastest levelling', 'You switch maps when another gives at least 10% more EXP an hour.'],
+  ['swapOften', 'Swap maps more often', 'Every 3 levels you move to whichever map gives the most EXP then.'],
+  ['mesos', 'Most mesos', 'You switch maps when another gives at least 10% more mesos an hour.'],
+  ['rareDrops', 'Hunting rare drops', 'Maps with at least half the best EXP an hour count. Each is scored half on EXP and half on valuable drops (60%, Chaos, 10% and 100% scrolls, throwing stars, then class gear), and you switch when another scores 10% higher.'],
+];
 
 export function RoutePage() {
   const { site, character } = useSite();
@@ -23,8 +29,10 @@ export function RoutePage() {
   const [goalText, setGoalText] = useState(String(goalLevel));
   const choices = advancementChoices(character.jobId, goalLevel);
   const [chosenJob, setChosenJob] = useStoredState('route-job', '');
+  const [styleText, setStyle] = useStoredState('route-style', 'fastest');
+  const style = STYLES.find(([candidate]) => candidate === styleText) ?? STYLES[0];
   const advanceInto = choices.length ? (choices.includes(Number(chosenJob)) ? Number(chosenJob) : choices[0]) : null;
-  const { plan, planningLevel, problem } = useRoutePlan(site, character, { goalLevel, players: settings.party, advanceInto });
+  const { plan, planningLevel, problem } = useRoutePlan(site, character, { goalLevel, players: settings.party, advanceInto, style: style[0] });
   const { setGoalText: saveGoal } = settings;
   useEffect(() => {
     if (!goalText.trim()) return undefined;
@@ -46,6 +54,12 @@ export function RoutePage() {
               onChange={(event) => setGoalText(event.target.value)} onBlur={tidyGoal} />
           </div>
           <PartyPicker value={settings.party} onChange={settings.setParty} />
+          <div className="field">
+            <label htmlFor="route-style">How you like to play</label>
+            <select id="route-style" value={style[0]} onChange={(event) => setStyle(event.target.value)}>
+              {STYLES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
           {choices.length > 0 && (
             <div className="field">
               <label htmlFor="route-job">Plan to become</label>
@@ -64,7 +78,7 @@ export function RoutePage() {
           <li>Your gear, stat points and skill points move toward the class guide as you level.</li>
           <li>You job advance as soon as you can, into the job you pick here.</li>
           <li>Each map uses whichever of your attacks gives the most EXP there.</li>
-          <li>You switch maps when another gives at least 25% more EXP an hour, or at least 10% more two levels in a row.</li>
+          <li>{style[2]}</li>
         </ul>
       </details>
     </main>
@@ -87,29 +101,54 @@ function RouteTimeline({ plan, site, character }: { plan: RoutePlan; site: SiteD
 }
 
 function RouteStopRow({ stop, site }: { stop: RouteStop; site: SiteData }) {
-  const map = site.game.maps.find((candidate) => candidate.id === stop.mapId);
-  const monster = stop.mainTarget !== null ? site.game.monsters.get(stop.mainTarget) : undefined;
   return (
     <div className="stop">
       <span className="stop-dot" aria-hidden="true" />
       <div className="stop-body">
-        <a className="stop-map" href={routeHref({ page: 'train', mapId: stop.mapId })}>{map?.name ?? `Map ${stop.mapId}`}</a>
-        <span className="stop-detail">
-          Level {stop.fromLevel} → {stop.toLevel}
-          {monster && (
-            <>
-              {' · '}
-              <a href={meowdbMonsterUrl(monster.id)} target="_blank" rel="noreferrer" className="stop-monster">
-                <img className="pixel" src={imageUrl(`img/mobs/${monster.id}/icon.png`)} alt="" />{monster.name}
-              </a>
-            </>
-          )}
-          {' · '}{formatNumber(stop.expPerHour)} EXP/h
-        </span>
+        <MapLine option={stop} site={site} prefix={`Level ${stop.fromLevel} → ${stop.toLevel}`} />
+        {stop.runnerUps.length > 0 && (
+          <details className="runner-ups">
+            <summary>Other options</summary>
+            <ul>
+              {stop.runnerUps.map((option) => (
+                <li key={option.mapId}>
+                  <MapLine option={option} site={site} prefix={difference(option, stop)} />
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
       <span className="stop-hours num">{formatHours(stop.hours)}</span>
     </div>
   );
+}
+
+function MapLine({ option, site, prefix }: { option: RouteOption; site: SiteData; prefix: string }) {
+  const map = site.game.maps.find((candidate) => candidate.id === option.mapId);
+  const monster = option.mainTarget !== null ? site.game.monsters.get(option.mainTarget) : undefined;
+  return (
+    <>
+      <a className="stop-map" href={routeHref({ page: 'train', mapId: option.mapId })}>{map?.name ?? `Map ${option.mapId}`}</a>
+      <span className="stop-detail">
+        {prefix}
+        {monster && (
+          <>
+            {' · '}
+            <a href={meowdbMonsterUrl(monster.id)} target="_blank" rel="noreferrer" className="stop-monster">
+              <img className="pixel" src={imageUrl(`img/mobs/${monster.id}/icon.png`)} alt="" />{monster.name}
+            </a>
+          </>
+        )}
+        {' · '}{formatNumber(option.expPerHour)} EXP/h · {formatNumber(option.mesosPerHour)} mesos/h
+      </span>
+    </>
+  );
+}
+
+function difference(option: RouteOption, chosen: RouteOption): string {
+  const percent = chosen.expPerHour > 0 ? Math.round((option.expPerHour / chosen.expPerHour - 1) * 100) : 0;
+  return `${percent > 0 ? '+' : percent < 0 ? '−' : '±'}${Math.abs(percent)}% EXP`;
 }
 
 function summary(plan: RoutePlan, from: number, goal: number): string {

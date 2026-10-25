@@ -67,7 +67,15 @@ Location: `C:\Program Files (x86)\Steam\steamapps\common\MapleStory\MSCW\Data` (
   (`080001000`–`080001300`) and quest maps send you back (`forcedReturn` = a real map) and set `fieldLimit` (72).
   `forcedReturn` alone is not enough: many open maps set it too.
 
-## 3. meowdb (https://meowdb.com/msclassic)
+## 3. meowdb / NiaDB (https://meowdb.com/msclassic)
+
+**Fixed snapshot, no new pulls (decided 2026-10-25).** NiaDB's [Content Reuse Policy](https://meowdb.com/reuse) welcomes
+quoting individual facts with a credit link, but asks for permission (contact@meowdb.com) before mirroring or
+bulk-scraping its data. The owner chose to keep the data already saved (`mesos.json`, `item-links.json`,
+`guides.json`) and pull nothing new; the NiaDB fetchers were removed from `tools/mirror/`. Linking to NiaDB pages
+with credit continues. NiaDB's Free Market price data is not used for the same reason.
+
+**meso.watch** is not used: its data files say they are not licensed for copying or redistribution.
 
 What we want: **formulas**, **"how to get there" links**, **item page links**, and fallback data (meso ranges). Read
 each page once; store results in the mirror. Formula pages:
