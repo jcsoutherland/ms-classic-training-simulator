@@ -33,3 +33,11 @@ export function minimumLevel(jobId: number): number {
 export function startingTown(jobId: number): 'henesys' | 'ellinia' | 'perion' | 'kerning' {
   return STARTING_TOWN[branchOf(jobId)] ?? 'henesys';
 }
+
+export function jobsAtLevel(level: number): number[] {
+  return JOB_IDS.filter((jobId) => jobId === 0 || (minimumLevel(jobId) <= level && nextAdvancementLevel(jobId) > level));
+}
+
+function nextAdvancementLevel(jobId: number): number {
+  return jobId % 100 === 0 ? 30 : 70;
+}

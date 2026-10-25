@@ -52,6 +52,7 @@ export interface Monster {
   elements: string;
   undead: boolean;
   boss: boolean;
+  moves?: true;
 }
 
 export type SkillKind = 'attack' | 'buff' | 'passive';
@@ -91,6 +92,7 @@ export interface Skill {
   weaponTypes: number[];
   actions: string[];
   levels: SkillLevel[];
+  levelText: string[];
   effects: SkillEffects;
 }
 

@@ -1,9 +1,9 @@
 import { fetchJson, imageUrl } from '../data/loadGameData';
+import type { GlyphBook } from './glyphs';
 import { decodePrintBook, type PrintBook } from './matchIcon';
 import type { RawImage } from './rawImage';
 import type { WindowKit, WindowLayout } from './readWindows';
 
-const CASH_ITEMS_FROM = 1700000;
 let kit: Promise<WindowKit> | null = null;
 
 export function loadWindowKit(): Promise<WindowKit> {
@@ -24,8 +24,9 @@ export async function fileToRawImage(file: Blob): Promise<RawImage> {
 }
 
 async function buildKit(): Promise<WindowKit> {
-  const [layout, skillPrints, stat, detail, skill, equipment] = await Promise.all([
+  const [layout, glyphs, skillPrints, stat, detail, skill, equipment] = await Promise.all([
     fetchJson<WindowLayout>('ui-layout.json'),
+    fetchJson<GlyphBook>('glyphs.json'),
     fetchJson<Record<string, string>>('skill-prints.json'),
     urlToRawImage(imageUrl('img/ui/stat.png')),
     urlToRawImage(imageUrl('img/ui/stat-detail.png')),
@@ -33,13 +34,19 @@ async function buildKit(): Promise<WindowKit> {
     urlToRawImage(imageUrl('img/ui/equipment.png')),
   ]);
   let equipPrints: Promise<PrintBook> | null = null;
+  const icons = new Map<number, Promise<RawImage>>();
   return {
     layout,
+    glyphs,
     templates: { stat, 'stat-detail': detail, skill, equipment },
     skillPrints: decodePrintBook(skillPrints),
     equipPrints: () => {
-      equipPrints ??= fetchJson<Record<string, string>>('equip-prints.json').then((prints) => decodePrintBook(prints, (id) => id < CASH_ITEMS_FROM));
+      equipPrints ??= fetchJson<Record<string, string>>('equip-prints.json').then((prints) => decodePrintBook(prints));
       return equipPrints;
+    },
+    itemIcon: (itemId) => {
+      if (!icons.has(itemId)) icons.set(itemId, urlToRawImage(imageUrl(`img/items/${itemId}.png`)));
+      return icons.get(itemId) as Promise<RawImage>;
     },
   };
 }

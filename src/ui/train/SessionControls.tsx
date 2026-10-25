@@ -55,7 +55,7 @@ export function SessionControls({ inputs, level, note, onChange, onTidy, extra }
         <PartyPicker value={inputs.party} onChange={(party) => change({ party })} />
         {extra}
       </div>
-      <p className="session-note">{note}</p>
+      {note && <p className="session-note">{note}</p>}
     </section>
   );
 }

@@ -57,6 +57,7 @@ function extractMobs(files: GameFiles, strings: Strings, output: Output): number
   const animations: Record<number, Animations> = {};
   for (const monster of monsters) {
     const images = readMobImages(files, monster.id);
+    if (images.frames.move || images.frames.fly) monster.moves = true;
     const frames: Animations = {};
     for (const [action, sprites] of Object.entries(images.frames)) frames[action] = output.frames(`img/mobs/${monster.id}`, action, sprites);
     if (images.icon) output.sprite(`img/mobs/${monster.id}/icon.png`, images.icon);

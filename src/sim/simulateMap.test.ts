@@ -1,10 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { rankMaps } from './rankMaps';
 import { simulateMap } from './simulateMap';
-import { realGameData, realMapDetails, sampleAssassin } from './testData';
+import { flynny, realGameData, realMapDetails, sampleAssassin } from './testData';
 
 const data = realGameData();
 const swamp = realMapDetails('010003090');
+
+describe('simulateMap against logged real play', () => {
+  const lineTwo = simulateMap(flynny({ level: 39 }), data, realMapDetails('010003066'), 1);
+
+  it('gives Flynny about the 67k EXP an hour logged solo on Line 2 <Area 1>', () => {
+    expect(lineTwo.expPerHour).toBeGreaterThan(67375 * 0.8);
+  });
+
+  it('does not give Flynny much more than the logged rate', () => {
+    expect(lineTwo.expPerHour).toBeLessThan(67375 * 1.25);
+  });
+
+  it('defeats about the 1,020 Jr. Wraiths an hour logged', () => {
+    expect(lineTwo.killsByMonster.get(32) ?? 0).toBeGreaterThan(1020 * 0.8);
+  });
+
+  it('gives each member of a party of 6 less than twice the solo rate', () => {
+    const party = simulateMap(flynny(), data, realMapDetails('010003063'), 6);
+    const solo = simulateMap(flynny(), data, realMapDetails('010003063'), 1);
+    expect(party.expPerHour).toBeLessThan(solo.expPerHour * 2);
+  });
+});
 
 describe('simulateMap on The Swamp of Despair I', () => {
   const solo = simulateMap(sampleAssassin(), data, swamp, 1);

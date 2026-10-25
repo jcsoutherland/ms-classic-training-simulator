@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { accuracyForHitChance, hitChance } from './accuracy';
 import { actionMilliseconds, walkPixelsPerSecond } from './attackTime';
-import { criticalScale, defenseScale, elementScale, levelGapScale } from './damage';
+import { criticalScale, defenseScale, elementScale, expectedHitsToKill, levelGapScale } from './damage';
 import { expToNextLevel, expToReach, levelAfter } from './exp';
 import { expPerMember, partyBonus } from './party';
 import { tidyHours } from './session';
@@ -32,6 +32,21 @@ describe('damage scaling', () => {
   it('reduces ice damage against an ice-resistant Ligator', () => expect(elementScale('I2F3', 'i')).toBe(0.75));
   it('ignores elements the monster has no reaction to', () => expect(elementScale('I2', 'f')).toBe(1));
   it('adds Critical Throw on top of the base critical', () => expect(criticalScale(15, 35)).toBeCloseTo(1.11, 5));
+});
+
+describe('expectedHitsToKill', () => {
+  it('needs one hit when the lowest hit already defeats the monster', () => {
+    expect(expectedHitsToKill(500, 600, 800)).toBe(1);
+  });
+
+  it('needs between one and two hits when hits land on both sides of the HP', () => {
+    const hits = expectedHitsToKill(982, 500, 900);
+    expect(hits > 1 && hits < 2.5).toBe(true);
+  });
+
+  it('rewards a little more damage even when the rounded hit count stays the same', () => {
+    expect(expectedHitsToKill(982, 540, 1140)).toBeLessThan(expectedHitsToKill(982, 500, 1100));
+  });
 });
 
 describe('attack time', () => {

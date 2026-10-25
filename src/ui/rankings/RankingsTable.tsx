@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Item, Monster } from '../../data/types';
-import { imageUrl } from '../../data/loadGameData';
+import { imageUrl, meowdbItemUrl, meowdbMonsterUrl } from '../../data/loadGameData';
 import type { RankedMap } from '../../sim/rankMaps';
 import { formatNumber, formatShortHours, rateText } from '../shared/format';
 import { routeHref } from '../routes';
@@ -17,6 +17,7 @@ interface RankingsTableProps {
   monsters: Map<number, Monster>;
   items: Map<number, Item>;
   likelyEquipment: (entry: RankedMap) => LikelyDrop[];
+  itemLinks: Record<number, number>;
   party: number;
   goalLevel: number;
   compact?: boolean;
@@ -30,7 +31,7 @@ const VALUE: Record<SortKey, (entry: RankedMap) => number> = {
   goal: (entry) => entry.hoursToGoal,
 };
 
-export function RankingsTable({ ranked, monsters, items, likelyEquipment, party, goalLevel, compact = false, shared }: RankingsTableProps) {
+export function RankingsTable({ ranked, monsters, items, likelyEquipment, itemLinks, party, goalLevel, compact = false, shared }: RankingsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('exp');
   const ascending = sortKey === 'goal';
   const rows = [...ranked].sort((a, b) => (ascending ? VALUE[sortKey](a) - VALUE[sortKey](b) : VALUE[sortKey](b) - VALUE[sortKey](a)));
@@ -63,7 +64,7 @@ export function RankingsTable({ ranked, monsters, items, likelyEquipment, party,
                   <a href={routeHref({ page: 'train', mapId: entry.map.id })}>{entry.map.name}</a>
                   {main && (
                     <div className="mobs">
-                      <img className="pixel" src={imageUrl(`img/mobs/${main.id}/icon.png`)} alt="" />
+                      <a href={meowdbMonsterUrl(main.id)} target="_blank" rel="noreferrer" title={main.name}><img className="pixel" src={imageUrl(`img/mobs/${main.id}/icon.png`)} alt={main.name} /></a>
                       <span>{main.name}, level {main.level}</span>
                     </div>
                   )}
@@ -77,7 +78,7 @@ export function RankingsTable({ ranked, monsters, items, likelyEquipment, party,
                       {likelyEquipment(entry).map((drop) => {
                         const name = items.get(drop.itemId)?.name ?? `Item ${drop.itemId}`;
                         const tip = `${name}: ${rateText(drop.perHour).toLowerCase()}`;
-                        return <span key={drop.itemId} title={tip}><img className="pixel" src={imageUrl(`img/items/${drop.itemId}.png`)} alt={tip} /></span>;
+                        return <a key={drop.itemId} href={meowdbItemUrl(drop.itemId, itemLinks)} target="_blank" rel="noreferrer" title={tip}><img className="pixel" src={imageUrl(`img/items/${drop.itemId}.png`)} alt={tip} /></a>;
                       })}
                     </div>
                   </td>

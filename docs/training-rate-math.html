@@ -1,0 +1,168 @@
+<title>Training Rate Math</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one readable column; each step of the calculation is a numbered section because the steps run in order */
+:root {
+  --bg: #f6f7f3; --surface: #ffffff; --ink: #1b2118; --muted: #5d6658; --line: #dde2d6;
+  --accent: #2f7d3a; --accent-soft: #e3f1e2; --warn: #9a5b0b; --warn-soft: #fbefdc;
+  --body: 'Atkinson Hyperlegible', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121611; --surface: #1a2018; --ink: #e8ede4; --muted: #a3ad9c; --line: #2d3529;
+  --accent: #7fcf86; --accent-soft: #1f3321; --warn: #f0b25c; --warn-soft: #33260f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121611; --surface: #1a2018; --ink: #e8ede4; --muted: #a3ad9c; --line: #2d3529;
+  --accent: #7fcf86; --accent-soft: #1f3321; --warn: #f0b25c; --warn-soft: #33260f; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6; }
+.page { max-width: 760px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+h1 { font-size: 2rem; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.2rem; margin: 0 0 8px; text-wrap: balance; display: flex; gap: 10px; align-items: baseline; }
+h2 .step { font-family: var(--mono); font-size: 0.85rem; color: var(--accent); }
+p { margin: 0 0 10px; max-width: 68ch; }
+.lead { color: var(--muted); font-size: 1.05rem; }
+section { display: grid; gap: 6px; }
+code, .formula { font-family: var(--mono); font-size: 0.88rem; }
+.formula { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; margin: 4px 0 8px; }
+.source { font-size: 0.85rem; color: var(--muted); }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 1px 7px; border-radius: 999px; margin-right: 6px; vertical-align: 1px; }
+.tag.game { background: var(--accent-soft); color: var(--accent); }
+.tag.niadb { background: var(--accent-soft); color: var(--accent); }
+.tag.assume { background: var(--warn-soft); color: var(--warn); }
+.tag.log { background: var(--warn-soft); color: var(--warn); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; font-variant-numeric: tabular-nums; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 700; font-size: 0.82rem; }
+td.n, th.n { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+ul { margin: 0; padding-left: 20px; max-width: 68ch; }
+li { margin: 4px 0; }
+.key { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.85rem; color: var(--muted); }
+</style>
+
+<main class="page">
+  <header>
+    <h1>How the training rates are worked out</h1>
+    <p class="lead">Every number the simulator shows comes from the steps below, in this order. Each step says where its numbers come from.</p>
+    <div class="key">
+      <span><span class="tag game">Game files</span>read from MapleStory Classic's own data</span>
+      <span><span class="tag niadb">NiaDB</span>NiaDB's formulas page or class guides</span>
+      <span><span class="tag assume">Assumption</span>a modelling choice, not a game value</span>
+      <span><span class="tag log">Your logs</span>measured from mapleclassic.training sessions</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="step">1</span>How often you hit</h2>
+    <p>Your accuracy against the monster's evasion, with a penalty when the monster is higher level.</p>
+    <code class="formula">L = max(0, monster level − your level)
+A = ACC × 100 / (10L + 255)
+f = 0.15 + 0.20 / (1 + e^((A − EVA) / 12)),  q = EVA / A
+hit chance = 1 if q ≤ 1 − f,  0 if q ≥ 1 + f,  otherwise (1 + f − q) / 2f</code>
+    <p class="source"><span class="tag niadb">NiaDB</span>formula. <span class="tag game">Game files</span>monster level and evasion. Your accuracy comes from your Stats window.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">2</span>How much each hit does</h2>
+    <p>Start from the attack range in your Stats window, multiply by the skill's damage, then by the monster's defense, the level gap and any element weakness. Crits use the crit rate and crit damage from your Stats window's Detail panel.</p>
+    <code class="formula">hit = (lowest..highest attack) × skill % × 100 / (DEF + 100)
+      × level gap (1 / (1 + gap² × 0.005) below 10 levels)
+      × element (weak 1.25, resist 0.75, immune 0)
+      × (1 + crit rate × (crit damage − 100%))
+spell = MagicTotal × spell % × (1 + INT × mastery / 125 … 1 + INT / 125)</code>
+    <p class="source"><span class="tag niadb">NiaDB</span>formulas. <span class="tag game">Game files</span>skill damage per level, monster defense and elements (the Jr. Wraith is weak to holy and fire). Heal on undead uses the Cleric guide's formula: Pool = ((INT × R + LUK) / 1000 + 2.5) × MagicTotal × R, damage per monster = Pool × (1 + 0.5(t − 1)) / t / 1.5, with t = 3 monsters assumed.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">3</span>How many hits a kill takes</h2>
+    <p>The old model rounded average damage up to whole hits, so a small damage boost changed nothing. Now it uses the expected number of hits when each hit lands somewhere between your lowest and highest damage, then divides by your hit chance.</p>
+    <code class="formula">expected hits ≈ HP / average hit + (1 + spread²) / 2
+spread² = (highest − lowest)² / 12 / average²
+kept between ⌈HP / highest⌉ and ⌈HP / lowest⌉
+attempts = expected hits / hit chance</code>
+    <p class="source"><span class="tag assume">Assumption</span>this is the standard renewal-theory estimate for how many random steps it takes to pass a total. It stays exact at both ends: one-hit kills stay one hit.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">4</span>How long each attack takes</h2>
+    <code class="formula">attack time = Σ frame delays × (10 + speed tier) / 16, rounded up to 30 ms</code>
+    <p class="source"><span class="tag game">Game files</span>body animation frames and weapon speed. <span class="tag niadb">NiaDB</span>speed tiers, booster −2 tiers, spells at tier 6.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">5</span>How monsters come back</h2>
+    <p>This was the biggest missing piece. A defeated monster doesn't reappear where it died. Every respawn tick, the map refills up to its capacity at random empty spawn points anywhere on the map, so the platform you're on empties out and you have to move.</p>
+    <code class="formula">tick every 7.56 s;  a spawn point waits 5 s after its monster dies
+capacity = spawn points × min(1, 0.75 + 0.05 × (players − 1))</code>
+    <p class="source"><span class="tag niadb">NiaDB</span>tick, cooldown and capacity. <span class="tag game">Game files</span>every spawn point's position. <span class="tag assume">Assumption</span>refilling at random empty points follows how MapleStory server emulators do it.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">6</span>Getting around the map</h2>
+    <code class="formula">walk = 125 × (speed + 20) / 100 px/s,  climb = speed + 20 px/s
+drop down a floor = 0.25 s + height / 670 px/s</code>
+    <p class="source"><span class="tag niadb">NiaDB</span>walk and climb speeds. <span class="tag game">Game files</span>ropes, ladders and platforms; routes go up only by rope and down by dropping. <span class="tag assume">Assumption</span>drop-down time.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">7</span>Monsters wandering</h2>
+    <p>Monsters don't stand on their spawn points. Every spawn point has a stretch of platform its monster walks along, and 107 of the 117 Classic monsters have a walking or flying animation. When and where a monster turns is decided by the game server, so it isn't in the game files. The simulator uses the long-run result of that walking instead: at every respawn tick, each walking monster is placed somewhere along its stretch with equal chance. A monster you're already fighting stays put.</p>
+    <code class="formula">monster x = wander left + random × (wander right − wander left), redrawn every 7.56 s</code>
+    <p class="source"><span class="tag game">Game files</span>each spawn point's wander range and which monsters have a move or fly animation. <span class="tag assume">Assumption</span>an even spread along the range.</p>
+    <p>It changes little: 1 to 5% less EXP for single-target attacks, and about 10% less for attacks that hit several monsters in a line, because spread-out monsters bunch up less often.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">8</span>The training session itself</h2>
+    <p>The simulator plays a fixed-seed 15-minute session on the real map, after a one-minute warm-up, and repeats it once for each monster you could camp. It keeps whichever gives the most EXP an hour.</p>
+    <ul>
+      <li>You go after the nearest monster of your chosen type. Other monsters only get hit when they're already in range, the way you'd hit something in the way.</li>
+      <li>A multi-target skill only hits monsters actually within its reach on the same platform, up to its target count.</li>
+      <li>In a party, members can't take the same monster, so six players share and crowd the same spawns.</li>
+    </ul>
+    <p class="source"><span class="tag game">Game files</span>skill reach, hit boxes and target counts. <span class="tag assume">Assumption</span>this targeting behaviour.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">9</span>Picking up drops</h2>
+    <p>A moderately efficient player loots most kills. Ranged jobs kill from further away, so looting costs them more walking than melee jobs.</p>
+    <code class="formula">per kill: 85% × (walk to the corpse + 0.3 s per monster looted)
+items and mesos you pick up = 85% of what drops</code>
+    <p class="source"><span class="tag assume">Assumption</span>85% and 0.3 s, set to match "moderately efficient" as you described. Your log's Tablecloth and Jr. Necki Skin counts show about 80% picked up.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">10</span>EXP and mesos</h2>
+    <code class="formula">EXP each = monster EXP, split in a party by NiaDB's share and party bonus
+mesos per kill = 67% chance × average of the monster's meso range × 85% picked up</code>
+    <p class="source"><span class="tag game">Game files</span>monster EXP. <span class="tag niadb">NiaDB</span>party share and meso ranges. <span class="tag log">Your logs</span>the 67% chance (NiaDB's community reports say 100%, which your logs contradict).</p>
+  </section>
+
+  <section>
+    <h2><span class="step">11</span>Checked against real play</h2>
+    <p>None of the steps above were tuned to these numbers, except the meso chance.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Flynny, Hunter</th><th class="n">Simulator</th><th class="n">Real</th><th class="n">Before</th></tr></thead>
+        <tbody>
+          <tr><td>Line 2 &lt;Area 1&gt;, level 39, solo, EXP/h</td><td class="n">71,800</td><td class="n">67,400</td><td class="n">—</td></tr>
+          <tr><td>Same session, Jr. Wraith kills/h</td><td class="n">1,010</td><td class="n">≈1,020</td><td class="n">—</td></tr>
+          <tr><td>Same session, mesos/h</td><td class="n">42,900</td><td class="n">39,200</td><td class="n">—</td></tr>
+          <tr><td>Line 1 &lt;Area 2&gt;, level 40, solo, EXP/h</td><td class="n">63,200</td><td class="n">≈50–55k</td><td class="n">125,700</td></tr>
+          <tr><td>Line 1 &lt;Area 2&gt;, party of 6, EXP/h each</td><td class="n">92,200</td><td class="n">≈80k</td><td class="n">172,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Not modelled yet</h2>
+    <ul>
+      <li>Getting knocked back when a monster touches you, and stopping for potions.</li>
+      <li>The exact walking pattern of each monster. The game server decides it, so the simulator uses an even spread along each spawn's range.</li>
+      <li>Whether a map's spawn-rate setting (<code>mobRate</code> in the game files) changes capacity.</li>
+    </ul>
+  </section>
+</main>

@@ -25,7 +25,7 @@ export function defaultCharacter(jobId: number, level: number, sources: DefaultS
   const gear = guideGear(jobId, level, sources);
   const weapon = gear.weapon ?? fallbackWeapon(jobId, level, sources.data);
   const weaponType = weapon ? Math.floor(weapon.id / 10000) % 100 : DEFAULT_WEAPON_TYPE[jobId] ?? 30;
-  const learned = skillLevelsAtLevel(jobId, level, sources.guides, skills);
+  const learned = movePointsToUsableAttacks(skillLevelsAtLevel(jobId, level, sources.guides, skills), skills, weaponType);
   const draft: Character = {
     id: `default-${jobId}-${level}`,
     name: `My ${jobName(jobId)}`,
@@ -73,6 +73,30 @@ export function mainAttack(character: Character, skills: Skill[]): number {
     }
   }
   return best;
+}
+
+export function withUsableAttackMix(character: Character, skills: Skill[]): Character {
+  const usable = Object.entries(character.attackMix).some(([id, percent]) => {
+    if (percent <= 0) return false;
+    if (Number(id) === REGULAR_ATTACK) return true;
+    const skill = skills.find((candidate) => candidate.id === Number(id));
+    return !!skill && usableWithWeapon(skill, character.weaponType) && !!learnedLevel(character, skill);
+  });
+  return usable ? character : { ...character, attackMix: { [mainAttack(character, skills)]: 100 } };
+}
+
+function movePointsToUsableAttacks(learned: Record<number, number>, skills: Skill[], weaponType: number): Record<number, number> {
+  const result = { ...learned };
+  for (const skill of skills) {
+    const points = result[skill.id] ?? 0;
+    if (skill.kind !== 'attack' || points === 0 || usableWithWeapon(skill, weaponType)) continue;
+    const replacement = skills.find((other) => other.kind === 'attack' && Math.floor(other.id / 10000) === Math.floor(skill.id / 10000)
+      && other.weaponTypes.length > 0 && usableWithWeapon(other, weaponType) && !NOT_MAIN_ATTACKS.test(other.name));
+    if (!replacement) continue;
+    result[skill.id] = 0;
+    result[replacement.id] = Math.min(replacement.maxLevel, (result[replacement.id] ?? 0) + points);
+  }
+  return result;
 }
 
 function guideGear(jobId: number, level: number, sources: DefaultSources): { weapon: Weapon | null; itemIds: number[] } {

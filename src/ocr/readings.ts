@@ -3,8 +3,6 @@ import type { Stat } from '../data/types';
 
 export interface StatReading {
   kind: 'stats';
-  name?: string;
-  jobId?: number;
   level?: number;
   expPercent?: number;
   stats: Partial<Record<Stat, number>>;
@@ -17,6 +15,8 @@ export interface DetailReading {
   magic?: number;
   accuracy?: number;
   avoid?: number;
+  criticalRate?: number;
+  criticalDamage?: number;
 }
 
 export interface SkillReading {
@@ -27,7 +27,8 @@ export interface SkillReading {
 export interface EquipmentReading {
   kind: 'equipment';
   itemIds: number[];
-  emptySlots: string[];
+  deco: boolean;
+  unidentified: number;
 }
 
 export type Reading = StatReading | DetailReading | SkillReading | EquipmentReading;
@@ -43,8 +44,6 @@ function applyReading(character: Character, reading: Reading, weaponIds: Set<num
     case 'stats':
       return {
         ...character,
-        name: reading.name || character.name,
-        jobId: reading.jobId ?? character.jobId,
         level: reading.level ?? character.level,
         expPercent: reading.expPercent ?? character.expPercent,
         stats: { ...character.stats, ...withoutMissing(reading.stats) },
@@ -56,10 +55,13 @@ function applyReading(character: Character, reading: Reading, weaponIds: Set<num
         attackMax: reading.attackMax ?? character.attackMax,
         accuracy: reading.accuracy ?? character.accuracy,
         avoid: reading.avoid ?? character.avoid,
+        criticalRate: reading.criticalRate ?? character.criticalRate,
+        criticalDamage: reading.criticalDamage ?? character.criticalDamage,
       };
     case 'skills':
-      return { ...character, skills: { ...character.skills, ...reading.levels } };
+      return { ...character, jobId: deepestJob(character.jobId, Object.keys(reading.levels).map(Number)), skills: { ...character.skills, ...reading.levels } };
     case 'equipment': {
+      if (reading.deco) return character;
       const weapon = reading.itemIds.find((id) => weaponIds.has(id));
       return {
         ...character,
@@ -73,4 +75,12 @@ function applyReading(character: Character, reading: Reading, weaponIds: Set<num
 
 function withoutMissing(stats: Partial<Record<Stat, number>>): Partial<Record<Stat, number>> {
   return Object.fromEntries(Object.entries(stats).filter(([, value]) => value !== undefined && value > 0)) as Partial<Record<Stat, number>>;
+}
+
+function deepestJob(current: number, skillIds: number[]): number {
+  const jobs = skillIds.map((id) => Math.floor(id / 10000)).filter((job) => job > 0);
+  const deepest = jobs.sort((a, b) => (b % 100 === 0 ? 0 : 1) - (a % 100 === 0 ? 0 : 1) || b - a)[0];
+  if (deepest === undefined) return current;
+  const currentIsDeeper = current % 100 !== 0 && Math.floor(current / 100) === Math.floor(deepest / 100) && deepest % 100 === 0;
+  return currentIsDeeper ? current : deepest;
 }

@@ -9,10 +9,16 @@ export interface MapName {
   street: string;
 }
 
+export interface SkillStrings {
+  name: string;
+  description: string;
+  levelText: string[];
+}
+
 export interface Strings {
   maps: Map<string, MapName>;
   mobs: Map<number, string>;
-  skills: Map<number, { name: string; description: string }>;
+  skills: Map<number, SkillStrings>;
   jobs: Map<number, string>;
   items: Map<number, { name: string; category: ItemCategory }>;
 }
@@ -49,13 +55,19 @@ function readMobNames(files: GameFiles): Map<number, string> {
 }
 
 function readSkillNames(files: GameFiles) {
-  const skills = new Map<number, { name: string; description: string }>();
+  const skills = new Map<number, SkillStrings>();
   const jobs = new Map<number, string>();
   for (const [id, entry] of childNodes(files.image(STRING_FILE, 'Skill.img').root)) {
     if (typeof entry.bookName === 'string') jobs.set(Number(id), entry.bookName);
-    else if (typeof entry.name === 'string') skills.set(Number(id), { name: entry.name, description: String(entry.desc ?? '') });
+    else if (typeof entry.name === 'string') skills.set(Number(id), { name: entry.name, description: String(entry.desc ?? ''), levelText: levelTextOf(entry) });
   }
   return { skills, jobs };
+}
+
+function levelTextOf(entry: Record<string, unknown>): string[] {
+  const text: string[] = [];
+  for (let level = 1; typeof entry[`h${level}`] === 'string'; level++) text.push(String(entry[`h${level}`]));
+  return text;
 }
 
 function readItemNames(files: GameFiles): Map<number, { name: string; category: ItemCategory }> {

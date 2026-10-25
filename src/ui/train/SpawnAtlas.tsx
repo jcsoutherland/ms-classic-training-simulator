@@ -1,5 +1,5 @@
 import type { MapDetail, Monster } from '../../data/types';
-import { imageUrl } from '../../data/loadGameData';
+import { imageUrl, meowdbMonsterUrl } from '../../data/loadGameData';
 import { formatPercent } from '../shared/format';
 
 export const MONSTER_COLORS = ['#5AA9FF', '#FFB257', '#A6E05A', '#FF6B78', '#8B7BFF', '#F5C542', '#C9C4E6'];
@@ -42,16 +42,15 @@ export function SpawnAtlas({ detail, mapName, monsters, hitChances }: SpawnAtlas
             return (
               <li key={id}>
                 <i className="dot" style={{ background: color(id) }} />
-                <img className="pixel sprite" src={imageUrl(`img/mobs/${id}/icon.png`)} alt="" />
+                <a href={meowdbMonsterUrl(id)} target="_blank" rel="noreferrer" title={monster?.name}><img className="pixel sprite" src={imageUrl(`img/mobs/${id}/icon.png`)} alt={monster?.name ?? ''} /></a>
                 <div>
-                  <b>{monster?.name ?? `Monster ${id}`}</b>
+                  <a className="legend-name" href={meowdbMonsterUrl(id)} target="_blank" rel="noreferrer">{monster?.name ?? `Monster ${id}`}</a>
                   <span>Level {monster?.level ?? '?'}, {counts.get(id)} spawn points. {chance >= 1 ? 'You hit it every time.' : `You hit it ${formatPercent(chance)} of the time.`}</span>
                 </div>
               </li>
             );
           })}
         </ul>
-        <p className="muted small">Dashed lines are ropes and ladders. Drawn from the map in the game files.</p>
       </figcaption>
     </figure>
   );

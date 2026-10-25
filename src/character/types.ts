@@ -16,6 +16,8 @@ export interface Character {
   magicAttack: number;
   accuracy: number;
   avoid: number;
+  criticalRate?: number;
+  criticalDamage?: number;
   weaponId: number | null;
   weaponType: number;
   weaponSpeed: number;

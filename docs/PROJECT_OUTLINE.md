@@ -176,15 +176,25 @@ meowdb's spawn model:
   adjustment **only if** it can be modeled accurately. Otherwise monsters are treated as standing at their spawn point.
 
 ### 4.6 Kills, EXP and mesos per hour
-- **Who you fight**: players camp one monster. For each monster on the map, the simulation camps the platforms
-  (spawn groups) where it makes up most of the spawn points (or every platform it spawns on, if it's never the
-  majority). Other monsters on those platforms are fought only when in the way, counted at half their spawns.
-  The option with the most EXP per hour wins; the "main monster" shown is the one defeated most often.
-- Kills/hr = min(how fast the party can kill, how fast the camped platforms supply monsters), after travel time.
+- **A played-out session** (`src/sim/roaming.ts`): a fixed-seed 15-minute run on the real spawn points after a
+  1-minute warm-up. Each respawn tick refills the map to capacity at **random empty points** (as server emulators
+  do), so cleared platforms stay empty and players must move. Routes use real ropes (up) and drop-downs (down,
+  0.25 s + height / 670 px/s). Players go for the nearest monster of the camped type and hit others only when
+  already in reach; multi-target skills catch only monsters in reach on the same platform; party members can't
+  take the same monster. Repeated per camped monster type; the most EXP per hour wins. Walking monsters (107 of 117) are
+  re-placed evenly along their spawn's wander range every tick.
+- **Kills**: expected hits per kill from the damage spread (renewal estimate `HP / average + (1 + spread²) / 2`,
+  clamped to the exact bounds), divided by hit chance. Clerics use Heal on undead when it's faster (Cleric guide
+  formula).
+- **Looting** (assumption, "moderately efficient"): 85% of kills are looted, each costing the walk to the corpse
+  plus 0.3 s; items and mesos shown are 85% of what drops.
+- Checked against the owner's logs (Flynny, Hunter 39–40): within about 10–20% solo and in a party of 6. The full
+  math with sources is in [training-rate-math.html](training-rate-math.html).
 - EXP per kill comes from the monster's `exp`. In a party: `Share = round(Pool × (0.8 × lvl / sumLvls + 0.2 × dmg / partyDmg))`
   plus a bonus of `min(0.30, 0.10 × (members - 1)) + 0.05 × (hitters - 1)`.
-- Mesos per kill: average of the monster's meso range from meowdb (the game files have none), falling back to
-  meowdb's estimate `floor(2.1 × level) + 3`.
+- Mesos per kill: 67% drop chance (measured from the owner's training logs; NiaDB's community reports say 100%)
+  × the average of the monster's meso range from NiaDB (the game files have none), falling back to NiaDB's
+  estimate `floor(2.1 × level) + 3`.
 - Drops: `expected = kills × dropRate`, shown rounded down. Quest items (`info/quest` in `Item/Etc`) are left out.
 - Multiply the hourly numbers by the chosen hours.
 

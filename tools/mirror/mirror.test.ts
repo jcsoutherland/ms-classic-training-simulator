@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseBaseStats, parseLevels, parseStatAdds } from './guides';
 import { estimatedMesos } from './meowdb';
-import { normalizeName } from './names';
+import { classicScrollName, normalizeName } from './names';
 import { parseRewardTables } from './osmlib';
 
 describe('parseRewardTables', () => {
@@ -51,5 +51,23 @@ describe('estimatedMesos', () => {
 describe('normalizeName', () => {
   it('ignores case and curly apostrophes', () => {
     expect(normalizeName('Amazon’s Judgement')).toBe(normalizeName("amazon's judgement"));
+  });
+
+  it('matches names that differ only by hyphens, spaces or stray punctuation', () => {
+    expect(['Mokbi Throwing-Stars', 'Red Magicshoes', 'Green Apple.'].map(normalizeName)).toEqual(['Mokbi Throwing Stars', 'Red Magic Shoes', 'Green Apple'].map(normalizeName));
+  });
+});
+
+describe('classicScrollName', () => {
+  it('turns a 10% GMS scroll into the Greater Classic scroll', () => {
+    expect(classicScrollName('Scroll for Cape for INT 10%')).toBe('Cape INT Scroll: Greater');
+  });
+
+  it('renames slots and stats the Classic way', () => {
+    expect(classicScrollName('Scroll for Two-handed BW for ATT 60%')).toBe('Two-handed Blunt Weapon Attack Scroll: Intermediate');
+  });
+
+  it('leaves out Dark scroll rates Classic has no tier for', () => {
+    expect(classicScrollName('Scroll for Cape for HP 70%')).toBeNull();
   });
 });

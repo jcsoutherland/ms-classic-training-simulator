@@ -1,10 +1,14 @@
 import { useState, type DragEvent } from 'react';
+import { withUsableAttackMix } from '../../character/defaults';
 import type { Character } from '../../character/types';
 import type { SiteData } from '../../data/loadGameData';
 import { fileToRawImage, loadWindowKit } from '../../ocr/loadKit';
 import { applyReadings, type Reading } from '../../ocr/readings';
 import { readScreenshot } from '../../ocr/readWindows';
-import { TextReader } from '../../ocr/textReader';
+import { characterSkills } from '../../sim/simulateMap';
+import { BoxPicker } from './BoxPicker';
+import { ExamplesDialog } from './ExamplesDialog';
+import { useCaptures, type Capture } from './useCaptures';
 
 interface ScreenshotPanelProps {
   draft: Character;
@@ -12,36 +16,40 @@ interface ScreenshotPanelProps {
   onRead: (character: Character) => void;
 }
 
-interface FileResult {
-  name: string;
-  status: 'reading' | 'read' | 'nothing' | 'problem';
+interface CaptureResult {
+  captureId: number;
+  found: boolean;
   message: string;
 }
 
 export function ScreenshotPanel({ draft, site, onRead }: ScreenshotPanelProps) {
-  const [results, setResults] = useState<FileResult[]>([]);
-  const [over, setOver] = useState(false);
+  const { captures, add, remove, clear, snip, problem } = useCaptures();
+  const [results, setResults] = useState<CaptureResult[]>([]);
   const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
+  const [showExamples, setShowExamples] = useState(false);
+  const [boxing, setBoxing] = useState<Capture | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const readFiles = async (files: File[]) => {
-    const images = files.filter((file) => file.type.startsWith('image/'));
-    if (images.length === 0) return;
+  const readAll = async () => {
     setBusy(true);
-    setResults(images.map((file) => ({ name: file.name, status: 'reading', message: 'Reading…' })));
-    const reader = new TextReader();
-    const all: Reading[] = [];
+    setError(null);
     try {
       const kit = await loadWindowKit();
-      for (const [index, file] of images.entries()) {
-        const outcome = await readOne(file, kit, reader);
-        all.push(...outcome.readings);
-        setResults((current) => current.map((result, position) => (position === index ? outcome.result : result)));
+      const all: Reading[] = [];
+      const next: CaptureResult[] = [];
+      for (const capture of captures) {
+        const readings = await readScreenshot(await fileToRawImage(capture.blob), kit);
+        all.push(...readings);
+        next.push({ captureId: capture.id, found: readings.length > 0, message: describe(readings) });
       }
-      if (all.length) onRead(applyReadings(draft, all, new Set(site.game.weapons.keys())));
-    } catch (error) {
-      setResults((current) => [...current, { name: 'Screenshots', status: 'problem', message: error instanceof Error ? error.message : String(error) }]);
+      setResults(next);
+      if (!all.length) return;
+      const read = applyReadings(draft, all, new Set(site.game.weapons.keys()));
+      onRead(withUsableAttackMix(read, characterSkills(read, site.game)));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
     } finally {
-      await reader.close();
       setBusy(false);
     }
   };
@@ -49,51 +57,65 @@ export function ScreenshotPanel({ draft, site, onRead }: ScreenshotPanelProps) {
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setOver(false);
-    readFiles([...event.dataTransfer.files]).catch(() => setBusy(false));
+    add([...event.dataTransfer.files], 'Screenshot');
   };
+
+  const resultFor = (capture: Capture) => results.find((result) => result.captureId === capture.id);
 
   return (
     <section className="panel" aria-labelledby="shots-heading">
       <h2 id="shots-heading">Fill it in from screenshots</h2>
-      <p className="hint">Add your Stats (with Detail open), Equipment and Skill windows. Scroll your skill windows and add every part. Your screenshots never leave your computer.</p>
-      <p className="warn">Take your Stats window screenshot with no buffs on. Buffs are added for you, so a buffed screenshot would count them twice.</p>
+      <p className="warn">Add your Stats (with Detail open and no buffs active), Equipment and Skill windows. <button className="link-button" type="button" onClick={() => setShowExamples(true)}>Examples</button></p>
       <div className={over ? 'drop over' : 'drop'} onDragOver={(event) => { event.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={onDrop}>
-        <p className="drop-title">{busy ? 'Reading your screenshots…' : 'Drop screenshots here'}</p>
-        <label className="button" htmlFor="screenshot-files">Choose screenshots</label>
-        <input id="screenshot-files" className="visually-hidden" type="file" accept="image/*" multiple disabled={busy}
-          onChange={(event) => { readFiles([...(event.target.files ?? [])]).catch(() => setBusy(false)); event.target.value = ''; }} />
+        <div className="capture-actions">
+          <button className="button" type="button" onClick={snip}>Snip a window</button>
+          <label className="button ghost" htmlFor="screenshot-files">Upload screenshots</label>
+          <input id="screenshot-files" className="visually-hidden" type="file" accept="image/*" multiple
+            onChange={(event) => { add([...(event.target.files ?? [])], 'Screenshot'); event.target.value = ''; }} />
+        </div>
+        <p className="hint">Or drop files here, or press Ctrl+V to paste a snip.</p>
       </div>
-      {results.length > 0 && (
-        <ul className="reads" aria-live="polite">
-          {results.map((result, index) => (
-            <li key={`${result.name}-${index}`}>
-              <span aria-hidden="true">{result.status === 'read' ? '✓' : result.status === 'reading' ? '…' : '!'}</span>
-              <div><b>{result.name}</b><span>{result.message}</span></div>
-            </li>
-          ))}
-        </ul>
+      {problem && <p className="hint">{problem}</p>}
+      {captures.length > 0 && (
+        <>
+          <ul className="captures">
+            {captures.map((capture) => {
+              const result = resultFor(capture);
+              return (
+                <li key={capture.id} className={result && !result.found ? 'missed' : undefined}>
+                  <img src={capture.url} alt={capture.name} />
+                  <div>
+                    <b>{capture.name}</b>
+                    {result && <span>{result.message}</span>}
+                    <span className="capture-links">
+                      <button className="link-button" type="button" onClick={() => setBoxing(capture)}>Draw a box</button>
+                      <button className="link-button" type="button" onClick={() => remove(capture.id)}>Remove</button>
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="capture-actions">
+            <button className="button" type="button" disabled={busy} onClick={() => { readAll().catch(() => setBusy(false)); }}>{busy ? 'Reading…' : `Read all ${captures.length}`}</button>
+            <button className="button ghost" type="button" onClick={() => { clear(); setResults([]); }}>Clear</button>
+          </div>
+        </>
       )}
+      {error && <p className="warn">{error}</p>}
+      <ExamplesDialog open={showExamples} onClose={() => setShowExamples(false)} />
+      <BoxPicker capture={boxing} onClose={() => setBoxing(null)} onCrop={(blob) => { add([blob], 'Boxed window'); setBoxing(null); }} />
     </section>
   );
 }
 
-async function readOne(file: File, kit: Awaited<ReturnType<typeof loadWindowKit>>, reader: TextReader): Promise<{ readings: Reading[]; result: FileResult }> {
-  try {
-    const readings = await readScreenshot(await fileToRawImage(file), kit, reader);
-    if (readings.length === 0) {
-      return { readings, result: { name: file.name, status: 'nothing', message: "No Stats, Skill or Equipment window found. Take the screenshot with the window open and not covered." } };
-    }
-    return { readings, result: { name: file.name, status: 'read', message: describe(readings) } };
-  } catch (error) {
-    return { readings: [], result: { name: file.name, status: 'problem', message: error instanceof Error ? error.message : String(error) } };
-  }
-}
-
 function describe(readings: Reading[]): string {
+  if (!readings.length) return 'No game window found. Draw a box around it.';
   return readings.map((reading) => {
-    if (reading.kind === 'stats') return 'Stats window read. Check the numbers on the right.';
-    if (reading.kind === 'detail') return 'Detail window read (attack, accuracy and avoid).';
-    if (reading.kind === 'skills') return `Skills window read: ${Object.keys(reading.levels).length} skills.`;
-    return `Equipment window read: ${reading.itemIds.length} items found${reading.emptySlots.length ? `, ${reading.emptySlots.length} slots empty or not recognised` : ''}.`;
-  }).join(' ');
+    if (reading.kind === 'stats') return 'Stats';
+    if (reading.kind === 'detail') return 'Detail';
+    if (reading.kind === 'skills') return `${Object.keys(reading.levels).length} skills`;
+    if (reading.deco) return "Deco tab: cosmetics can't be drawn yet, so your regular gear is shown";
+    return `${reading.itemIds.length} items`;
+  }).join(', ');
 }

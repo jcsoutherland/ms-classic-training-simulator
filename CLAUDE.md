@@ -110,3 +110,5 @@ Read these before starting any work:
 - All buttons share one shape (the `.button` corners). Don't introduce round pills or other button styles.
 - Characters save as the player edits. Don't add Save buttons.
 - When the user asks for options on a layout, show visual mockups to pick from rather than describing them.
+- One mockup covers one decision. Show it, wait for the answer, then show the next. Never put two separate UI choices in
+  one mockup or one question.

@@ -16,7 +16,7 @@
 .board .mobs { display: flex; align-items: center; gap: 8px; margin-top: 2px; color: var(--muted); font-size: 12px; }
 .board .mobs img { max-height: 26px; max-width: 40px; }
 .board .drops { display: flex; gap: 4px; }
-.board .drops span { width: 32px; height: 32px; border-radius: 6px; background: var(--bg); border: 1px solid var(--gold); display: grid; place-items: center; }
+.board .drops a { width: 32px; height: 32px; border-radius: 6px; background: var(--bg); border: 1px solid var(--gold); display: grid; place-items: center; }
 .board .drops img { max-width: 28px; max-height: 28px; }
 .board .rank { font-weight: 800; color: var(--faint); width: 40px; }
 .board tr.shared td:first-child { box-shadow: inset 3px 0 0 var(--gold); }

@@ -1,6 +1,6 @@
 export const DAMAGE_CAP = 99999;
-const BASE_CRITICAL_CHANCE = 0.05;
-const BASE_CRITICAL_DAMAGE = 0.2;
+export const BASE_CRITICAL_CHANCE = 0.05;
+export const BASE_CRITICAL_DAMAGE = 0.2;
 const ELEMENT_MULTIPLIER: Record<string, number> = { '1': 0, '2': 0.75, '3': 1.25 };
 
 export function levelGapScale(playerLevel: number, monsterLevel: number): number {
@@ -39,6 +39,15 @@ export function averageMagicHit(intelligence: number, magicAttack: number, spell
   const minimum = scale * magicTotal * (1 + intelligence * masteryFraction(masteryLevel) / 125);
   const maximum = scale * magicTotal * (1 + intelligence / 125);
   return (minimum + maximum) / 2;
+}
+
+export function expectedHitsToKill(hp: number, lowestHit: number, highestHit: number): number {
+  const average = (lowestHit + highestHit) / 2;
+  if (average <= 0) return Infinity;
+  if (lowestHit >= hp) return 1;
+  const relativeSpread = (highestHit - lowestHit) ** 2 / 12 / average ** 2;
+  const renewalEstimate = hp / average + (1 + relativeSpread) / 2;
+  return Math.min(Math.ceil(hp / Math.max(1, lowestHit)), Math.max(Math.ceil(hp / highestHit), renewalEstimate));
 }
 
 export function cappedHit(value: number): number {

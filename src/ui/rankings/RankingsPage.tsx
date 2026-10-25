@@ -5,11 +5,13 @@ import type { SiteData } from '../../data/loadGameData';
 import { accuracyForHitChance, VIABLE_HIT_CHANCE } from '../../sim/accuracy';
 import { MAX_LEVEL } from '../../sim/exp';
 import type { LeftOutMap, RankedMap, Rankings } from '../../sim/rankMaps';
+import { LOOT_SHARE } from '../../sim/roaming';
 import { effectiveAccuracy } from '../../sim/simulateMap';
 import { ComparePicker } from '../shared/ComparePicker';
 import { formatPercent } from '../shared/format';
 import { PartyPicker } from '../shared/PartyPicker';
 import { useCompare } from '../shared/useCompare';
+import { goalLevelFor, useSessionSettings } from '../shared/useSessionSettings';
 import { useSite } from '../SiteContext';
 import { CharacterWindow } from '../stage/CharacterWindow';
 import { RankingsTable, type LikelyDrop } from './RankingsTable';
@@ -22,13 +24,14 @@ const SHARED_TOP = 10;
 export function RankingsPage() {
   const { site, character } = useSite();
   const compare = useCompare();
-  const [party, setParty] = useState(1);
-  const [goalText, setGoalText] = useState(String(Math.min(MAX_LEVEL, character.level + 5)));
-  const goalLevel = Math.min(MAX_LEVEL, Math.max(character.level + 1, Math.round(Number(goalText) || character.level + 1)));
+  const settings = useSessionSettings();
+  const party = settings.party;
+  const goalLevel = goalLevelFor(settings.goalText, character.level);
+  const [goalText, setGoalText] = useState(String(goalLevel));
   const { rankings, problem, slow } = useRankings(site.game, character, party, goalLevel);
   const compared = useRankings(site.game, compare.compared, party, goalLevel);
   const likelyEquipment = (entry: RankedMap) => equipmentFor(entry, site);
-  const tableProps = { monsters: site.game.monsters, items: site.items, likelyEquipment, party, goalLevel };
+  const tableProps = { monsters: site.game.monsters, items: site.items, itemLinks: site.itemLinks, likelyEquipment, party, goalLevel };
   const comparing = compare.compared !== null;
   const shared = rankings && compared.rankings ? sharedTopMaps(rankings, compared.rankings) : new Set<string>();
   return (
@@ -42,9 +45,9 @@ export function RankingsPage() {
           <div className="field compact">
             <label htmlFor="ranking-goal">Goal level</label>
             <input id="ranking-goal" type="number" inputMode="numeric" min={character.level + 1} max={MAX_LEVEL} value={goalText}
-              onChange={(event) => setGoalText(event.target.value)} onBlur={() => setGoalText(String(goalLevel))} />
+              onChange={(event) => setGoalText(event.target.value)} onBlur={() => { const tidied = goalLevelFor(goalText, character.level); settings.setGoalText(String(tidied)); setGoalText(String(tidied)); }} />
           </div>
-          <PartyPicker value={party} onChange={setParty} />
+          <PartyPicker value={party} onChange={settings.setParty} />
           <ComparePicker compare={compare} />
         </div>
       </div>
@@ -94,7 +97,7 @@ function equipmentFor(entry: RankedMap, site: SiteData): LikelyDrop[] {
   for (const [monsterId, kills] of entry.simulation.killsByMonster) {
     for (const drop of site.game.drops[monsterId] ?? []) {
       if (site.items.get(drop.itemId)?.category !== 'equip') continue;
-      perHour.set(drop.itemId, (perHour.get(drop.itemId) ?? 0) + kills * drop.chance);
+      perHour.set(drop.itemId, (perHour.get(drop.itemId) ?? 0) + kills * LOOT_SHARE * drop.chance);
     }
   }
   return [...perHour].map(([itemId, rate]) => ({ itemId, perHour: rate })).sort((a, b) => b.perHour - a.perHour).slice(0, EQUIPMENT_ICONS);

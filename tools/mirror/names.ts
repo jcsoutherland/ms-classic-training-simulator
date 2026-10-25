@@ -3,7 +3,18 @@ import path from 'node:path';
 import type { Item, Monster } from '../../src/data/types';
 
 export function normalizeName(name: string): string {
-  return name.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim();
+  return name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '');
+}
+
+const SCROLL_TIERS: Record<string, string> = { 10: 'Greater', 60: 'Intermediate', 100: 'Lesser' };
+const SCROLL_SLOTS: Record<string, string> = { Helmet: 'Hat', 'One-Handed BW': 'One-Handed Blunt Weapon', 'Two-handed BW': 'Two-handed Blunt Weapon', 'Pole Arm': 'Polearm', 'Pet Equip.': 'Pet Equip' };
+const SCROLL_STATS: Record<string, string> = { ATT: 'Attack', 'Magic Att.': 'Magic Attack' };
+
+export function classicScrollName(osmlibName: string): string | null {
+  const match = osmlibName.match(/^Scroll for (.+?) for (.+?) (\d+)%$/i);
+  const tier = match ? SCROLL_TIERS[match[3]] : undefined;
+  if (!match || !tier) return null;
+  return `${SCROLL_SLOTS[match[1]] ?? match[1]} ${SCROLL_STATS[match[2]] ?? match[2]} Scroll: ${tier}`;
 }
 
 export function decodeHtml(text: string): string {

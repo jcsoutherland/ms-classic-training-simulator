@@ -50,3 +50,30 @@ export function sampleAssassin(changes: Partial<Character> = {}): Character {
     ...changes,
   };
 }
+
+export function flynny(changes: Partial<Character> = {}): Character {
+  return {
+    id: 'flynny',
+    name: 'Flynny',
+    jobId: 310,
+    level: 40,
+    expPercent: 25,
+    gender: 'male',
+    stats: { STR: 40, DEX: 196, INT: 4, LUK: 4 },
+    attackMin: 283,
+    attackMax: 359,
+    weaponAttack: 60,
+    magicAttack: 0,
+    accuracy: 88,
+    avoid: 41,
+    criticalRate: 37,
+    criticalDamage: 137,
+    weaponId: 1452006,
+    weaponType: 45,
+    weaponSpeed: 6,
+    skills: { 3000000: 15, 3000001: 15, 3001000: 10, 3001003: 1, 3001001: 20, 3100000: 20, 3100001: 1, 3101000: 1, 3101001: 5, 3101003: 2, 3101004: 2 },
+    attackMix: { 3001001: 100 },
+    equipment: [],
+    ...changes,
+  };
+}

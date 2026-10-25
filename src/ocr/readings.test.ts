@@ -26,7 +26,7 @@ describe('applyReadings', () => {
   });
 
   it('equips the weapon found in the Equipment window', () => {
-    const updated = applyReadings(sampleAssassin(), [{ kind: 'equipment', itemIds: [1002175, 1472010], emptySlots: [] }], weapons);
+    const updated = applyReadings(sampleAssassin(), [{ kind: 'equipment', itemIds: [1002175, 1472010], deco: false, unidentified: 0 }], weapons);
     expect(updated.weaponId).toBe(1472010);
   });
 });

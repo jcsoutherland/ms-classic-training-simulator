@@ -21,6 +21,10 @@ describe('extracted monsters', () => {
     expect(monsters.find((monster) => monster.name === 'Ligator')).toMatchObject({ level: 31, hp: 853, exp: 58, avoid: 21 });
   });
 
+  it('knows Jr. Wraiths move around but the training dummy does not', () => {
+    expect([monsters.find((monster) => monster.name === 'Jr. Wraith')?.moves, monsters.find((monster) => monster.name === 'Straw Traning Dummy')?.moves]).toEqual([true, undefined]);
+  });
+
   it('has Classic Wraith HP', () => {
     expect(monsters.find((monster) => monster.name === 'Wraith')?.hp).toBe(2350);
   });

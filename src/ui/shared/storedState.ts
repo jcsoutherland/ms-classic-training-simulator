@@ -19,6 +19,23 @@ export function writeStored(key: string, value: string): boolean {
   }
 }
 
+export function readThisVisit(key: string): string | null {
+  try {
+    return window.sessionStorage.getItem(PREFIX + key);
+  } catch {
+    return null;
+  }
+}
+
+export function writeThisVisit(key: string, value: string): boolean {
+  try {
+    window.sessionStorage.setItem(PREFIX + key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function useStoredState(key: string, fallback: string): [string, (value: string) => void] {
   const [value, setValue] = useState(() => readStored(key) ?? fallback);
   const update = useCallback((next: string) => {

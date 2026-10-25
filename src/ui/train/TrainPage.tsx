@@ -4,11 +4,13 @@ import { loadMapDetail, meowdbRouteUrl } from '../../data/loadGameData';
 import type { MapDetail, MapSummary } from '../../data/types';
 import { MAX_LEVEL } from '../../sim/exp';
 import { buildSession, sessionHours, tidyHours } from '../../sim/session';
+import { LOOT_SHARE } from '../../sim/roaming';
 import { attacksToDefeat, simulateMap } from '../../sim/simulateMap';
 import { useRankings } from '../rankings/useRankings';
 import { ComparePicker } from '../shared/ComparePicker';
 import { formatHours, formatNumber } from '../shared/format';
-import { readStored, writeStored } from '../shared/storedState';
+import { readThisVisit, writeThisVisit } from '../shared/storedState';
+import { goalLevelFor, useSessionSettings } from '../shared/useSessionSettings';
 import { useCompare } from '../shared/useCompare';
 import { useSite } from '../SiteContext';
 import { CharacterWindow } from '../stage/CharacterWindow';
@@ -27,10 +29,10 @@ const TRACKER_URL = 'https://mapleclassic.training';
 
 export function TrainPage({ mapId }: { mapId: string | null }) {
   const { site, character } = useSite();
-  const chosenId = mapId ?? readStored(CHOSEN_MAP_KEY);
+  const chosenId = mapId ?? readThisVisit(CHOSEN_MAP_KEY);
   const { rankings, problem } = useRankings(site.game, chosenId ? null : character, 1, Math.min(MAX_LEVEL, character.level + 5));
   useEffect(() => {
-    if (mapId) writeStored(CHOSEN_MAP_KEY, mapId);
+    if (mapId) writeThisVisit(CHOSEN_MAP_KEY, mapId);
   }, [mapId]);
   const bestId = rankings?.ranked[0]?.map.id ?? (problem || rankings ? suggestMap(character, site.game) : null);
   const shownId = chosenId ?? bestId;
@@ -43,7 +45,16 @@ function TrainMap({ map }: { map: MapSummary }) {
   const { character } = useSite();
   const [detail, setDetail] = useState<MapDetail | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [inputs, setInputs] = useState<SessionInputs>({ mode: 'hours', hoursText: '1', goalText: String(Math.min(MAX_LEVEL, character.level + 5)), expText: String(character.expPercent), party: 1 });
+  const settings = useSessionSettings();
+  const [expText, setExpText] = useState(String(character.expPercent));
+  const inputs: SessionInputs = { mode: settings.mode, hoursText: settings.hoursText, goalText: settings.goalText || String(goalLevelFor('', character.level)), expText, party: settings.party };
+  const setInputs = (next: SessionInputs) => {
+    settings.setMode(next.mode);
+    settings.setHoursText(next.hoursText);
+    settings.setGoalText(next.goalText);
+    settings.setParty(next.party);
+    setExpText(next.expText);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +92,8 @@ function TrainView({ map, detail, inputs, onInputs }: TrainViewProps) {
     return { name: compare.compared.name, session: buildSession(theirs, sessionLength, compare.compared.level, compare.compared.expPercent) };
   }, [compare.compared, site.game, detail, inputs.party, sessionLength]);
   const rollKey = `${map.id}|${character.id}|${character.level}|${hours.toFixed(1)}|${inputs.party}`;
-  const { drops, rollAgain } = useDropRoll(rollKey, session.killsByMonster, site.game.drops);
+  const lootedKills = useMemo(() => new Map([...session.killsByMonster].map(([id, kills]) => [id, kills * LOOT_SHARE])), [session.killsByMonster]);
+  const { drops, rollAgain } = useDropRoll(rollKey, lootedKills, site.game.drops);
   const mainMonster = simulation.mainTarget !== null ? site.game.monsters.get(simulation.mainTarget) : undefined;
   const stage = detail.stage ?? FALLBACK_STAGE;
   const note = sessionNote(inputs, hours, goalLevel, character.level, session.kills);
@@ -96,7 +108,7 @@ function TrainView({ map, detail, inputs, onInputs }: TrainViewProps) {
           <h1>{map.name}</h1>
           <div className="train-actions">
             <a className="button" href={meowdbRouteUrl(map.id)} target="_blank" rel="noreferrer">How to get there</a>
-            <span className="muted go-note">Opens the route on MeowDB</span>
+            <span className="muted go-note">Opens the route on NiaDB</span>
           </div>
           {simulation.killsPerHour <= 0 && <p className="warn">You can't defeat the monsters here yet. Try a map with lower-level monsters.</p>}
           <MapPicker maps={site.game.maps} monsters={site.game.monsters} currentId={map.id} />
@@ -119,8 +131,8 @@ function TrainView({ map, detail, inputs, onInputs }: TrainViewProps) {
       <Tally session={session} party={inputs.party} startLevel={character.level} compared={compared} />
       <SpawnAtlas detail={detail} mapName={map.name} monsters={site.game.monsters} hitChances={simulation.hitChances} />
       <DropLog drops={drops} hours={Math.max(session.hours, 0.5)} party={inputs.party} mesos={session.mesos} items={site.items}
-        itemLinks={site.itemLinks} missingTables={missingTables} totalKills={session.kills} onRollAgain={rollAgain} />
-      <p className="muted small footnote">Kills, EXP and mesos are averages and stay the same each time. Item drops are rolled like a real session, so they change a little when you roll again. Your character spends most of the time on the platforms of the monster that gives them the best EXP, and fights other monsters only when they share those platforms. Monster numbers come from MapleStory Classic's game files, drop rates from osmlib and meso amounts from MeowDB.</p>
+        itemLinks={site.itemLinks} missingTables={missingTables} totalKills={session.kills * LOOT_SHARE} onRollAgain={rollAgain} />
+      <p className="muted small footnote">Kills, EXP and mesos are averages and stay the same each time. Item drops are rolled like a real session, so they change a little when you roll again. Your character spends most of the time on the platforms of the monster that gives them the best EXP, and fights other monsters only when they share those platforms. Monster numbers come from MapleStory Classic's game files, drop rates from osmlib (older game data, so they may not match Classic exactly; Classic scrolls are matched by tier) and meso amounts from NiaDB. Monsters drop mesos about 67% of the time, measured from real training logs, and you're assumed to pick up about 85% of drops.</p>
     </main>
   );
 }
@@ -130,5 +142,5 @@ function sessionNote(inputs: SessionInputs, hours: number, goalLevel: number, le
     return Number.isFinite(hours) ? `Level ${level} to ${goalLevel} takes about ${formatHours(hours)} here (${formatNumber(kills)} monsters).` : 'You would never reach that level here.';
   }
   const typed = inputs.hoursText.trim();
-  return typed !== '' && String(hours) !== typed ? `Using ${formatHours(hours)}. Hours go from 0.5 to 1,000 in half-hour steps.` : `Training for ${formatHours(hours)}.`;
+  return typed !== '' && String(hours) !== typed ? `Using ${formatHours(hours)}. Hours go from 0.5 to 1,000 in half-hour steps.` : '';
 }

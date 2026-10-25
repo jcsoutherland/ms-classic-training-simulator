@@ -72,6 +72,10 @@ export function meowdbItemUrl(itemId: number, itemLinks: Record<number, number>)
   return page ? `https://meowdb.com/msclassic/item-db/${page}` : 'https://meowdb.com/msclassic/item-db/all';
 }
 
+export function meowdbMonsterUrl(monsterId: number): string {
+  return `https://meowdb.com/msclassic/monsters/${monsterId}`;
+}
+
 export function meowdbRouteUrl(mapId: string): string {
   return `https://meowdb.com/msclassic/pathfinder?to=${mapId}&taxi=1`;
 }

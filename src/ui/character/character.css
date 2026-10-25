@@ -9,7 +9,7 @@
 .fields.spaced { margin-top: 12px; }
 .tabs { margin-top: 12px; }
 .skills { list-style: none; margin: 10px 0 0; padding: 0; }
-.skills li { display: grid; grid-template-columns: 36px minmax(0, 1fr) 100px 140px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.skills li { display: grid; grid-template-columns: 36px minmax(0, 1fr) 110px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .skill-icon { width: 32px; height: 32px; justify-self: center; }
 .skills b { display: block; }
 .skills span { color: var(--muted); font-size: 13px; }
@@ -19,10 +19,6 @@
 .buff-note { color: var(--exp) !important; font-weight: 700; }
 .mix-ok { font-weight: 700; margin: 10px 0 0; }
 .mix-off { font-weight: 700; margin: 10px 0 0; color: var(--warm); }
-.save-status { font-size: 13px; color: var(--muted); margin: 0; }
-.save-status.saved { color: var(--exp); font-weight: 700; }
-.save-status.failed { color: var(--hp); font-weight: 700; }
-.delete-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .drop { margin-top: 12px; border: 2px dashed #4e4880; border-radius: 12px; padding: 16px; text-align: center; background: var(--surface); }
 .drop.over { border-color: var(--accent); background: var(--panel-raised); }
 .reads { list-style: none; margin: 12px 0 0; padding: 0; }
@@ -31,6 +27,55 @@
 .reads span { color: var(--muted); font-size: 13px; }
 @media (max-width: 760px) {
   .skills li { grid-template-columns: 36px minmax(0, 1fr); }
-  .skills li .field.mini { grid-column: 2; }
+  .skills li .field { grid-column: 2; }
 }
 .drop-title { margin: 6px 0 10px; font-weight: 700; }
+.saved-characters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.character-card { display: flex; align-items: center; gap: 12px; min-width: 170px; padding: 7px 10px 7px 12px; border-radius: var(--corner); border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; text-align: left; }
+.character-card:hover { border-color: var(--accent); }
+.character-card[aria-pressed='true'] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.card-text { flex: 1; line-height: 1.25; }
+.card-text b { display: block; font-size: 14px; }
+.card-text span { color: var(--text-soft); font-size: 12px; font-weight: 400; }
+.card-level { display: grid; justify-items: center; min-width: 38px; padding: 2px 6px; border: 1px solid var(--line-strong); border-radius: 8px; line-height: 1.1; }
+.card-level small { color: var(--muted); font-size: 10px; }
+.card-level b { font-size: 15px; }
+.add-character { width: 46px; border: 0; border-radius: var(--corner); background: #5fd35f; color: #0f2a12; font: inherit; font-size: 24px; font-weight: 800; cursor: pointer; }
+.add-character:hover { background: #7ee07e; }
+.field.span-2 { grid-column: span 2; }
+.job-select { min-width: 220px; }
+.mix-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--bg); border: 1px solid var(--line-strong); margin-bottom: 8px; }
+.mix-bar i { display: block; height: 100%; }
+.mix-list { list-style: none; margin: 0; padding: 0; }
+.mix-list li { display: grid; grid-template-columns: 10px 32px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.mix-swatch { width: 10px; height: 10px; border-radius: 3px; }
+.stepper { display: inline-flex; align-items: center; gap: 4px; }
+.stepper .pill { min-width: 32px; min-height: 30px; padding: 0; }
+.stepper input { width: 56px; min-height: 30px; font: inherit; font-weight: 800; text-align: center; color: var(--text); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--corner); }
+.equipment { list-style: none; margin: 0; padding: 0; max-width: 460px; }
+.equipment a { display: grid; grid-template-columns: 34px 64px 1fr; gap: 10px; align-items: center; padding: 4px; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; border-radius: 6px; }
+.equipment a:hover { background: var(--panel-raised); }
+.equipment a:hover b { color: var(--accent-hover); text-decoration: underline; }
+.equipment .slot.small { opacity: 1; }
+.guide-fields { display: grid; grid-template-columns: minmax(0, 1fr) 90px; gap: 10px; margin-top: 10px; }
+.guide-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.field label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.skills li div > span { display: block; }
+.link-button { font: inherit; color: var(--accent-hover); background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+.capture-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.captures { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 6px; }
+.captures li { display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: center; padding: 6px; border: 1px solid var(--line); border-radius: var(--corner); background: var(--surface); }
+.captures li.missed { border-color: var(--warm); }
+.captures img { width: 64px; height: 48px; object-fit: contain; background: var(--bg); border-radius: 6px; }
+.captures b { display: block; font-size: 13px; }
+.captures span { display: block; color: var(--muted); font-size: 12px; }
+.capture-links { display: flex !important; gap: 12px; margin-top: 2px; }
+.box-picker { max-width: min(92vw, 900px); }
+.box-area { position: relative; display: inline-block; cursor: crosshair; touch-action: none; user-select: none; }
+.box-area img { display: block; max-width: min(86vw, 860px); max-height: 70vh; }
+.box-outline { position: absolute; border: 2px dashed var(--gold); background: rgba(245, 197, 66, 0.12); pointer-events: none; }
+.examples { max-width: min(92vw, 860px); }
+.example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.example-grid figure { margin: 0; }
+.example-grid img { display: block; max-width: 100%; border-radius: 6px; }
+.example-grid figcaption { font-size: 12px; margin-top: 4px; }

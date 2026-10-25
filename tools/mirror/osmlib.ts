@@ -1,5 +1,5 @@
 import type { DropEntry, DropTables } from '../../src/data/types';
-import { normalizeName, type ClassicNames } from './names';
+import { classicScrollName, normalizeName, type ClassicNames } from './names';
 import { politeJson, politeText } from './politeFetch';
 
 const SITE = 'https://osmlib.com/';
@@ -27,7 +27,7 @@ export async function readOsmlibDrops(names: ClassicNames): Promise<OsmlibResult
     const entries: DropEntry[] = [];
     for (const reward of rewards) {
       const itemName = itemNames[String(reward.itemId)]?.name;
-      const classicId = itemName ? names.itemIdsByName.get(normalizeName(itemName)) : undefined;
+      const classicId = itemName ? classicItemId(itemName, names) : undefined;
       if (classicId === undefined) {
         unmatchedItems.add(itemName ?? `osmlib item ${reward.itemId}`);
         continue;
@@ -77,4 +77,9 @@ function chunkFiles(runtime: string): string[] {
   const hashes = runtime.match(/\{(\d+:"[0-9a-f]+",?)+\}/)?.[0];
   if (!hashes) return [];
   return [...hashes.matchAll(/(\d+):"([0-9a-f]+)"/g)].map((match) => `${match[1]}.${match[2]}.chunk.js`);
+}
+
+function classicItemId(osmlibName: string, names: ClassicNames): number | undefined {
+  const scroll = classicScrollName(osmlibName);
+  return names.itemIdsByName.get(normalizeName(osmlibName)) ?? (scroll ? names.itemIdsByName.get(normalizeName(scroll)) : undefined);
 }

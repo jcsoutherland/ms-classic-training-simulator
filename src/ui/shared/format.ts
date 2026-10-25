@@ -21,6 +21,11 @@ export function formatPercent(fraction: number): string {
   return `${Math.round(fraction * 100)}%`;
 }
 
+export function rawRate(expected: number, kills: number): string {
+  if (expected <= 0 || kills <= 0) return '—';
+  return `1/${Math.round(kills / expected).toLocaleString('en-US')}`;
+}
+
 export function rateText(perHour: number): string {
   if (perHour <= 0) return 'Not expected here';
   if (perHour >= 1) return `About ${formatNumber(perHour)} an hour on average`;

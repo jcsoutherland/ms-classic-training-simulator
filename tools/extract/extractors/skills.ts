@@ -58,6 +58,7 @@ function readSkill(id: number, node: WzNode, strings: Strings, skillRoot: WzNode
     weaponTypes: [numberOf(node.weapon), numberOf(node.weapon2)].filter((value): value is number => value !== undefined && value > 0),
     actions: actionsOf(node.action),
     levels,
+    levelText: name.levelText.map((text) => text.replace(/\n/g, ' ')),
     effects: { effect: !!node.effect, hit: !!node.hit || !!lastLevelPart(node, 'hit'), ball: !!node.ball || !!lastLevelPart(node, 'ball') },
   };
 }

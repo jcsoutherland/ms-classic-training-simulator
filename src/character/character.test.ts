@@ -3,11 +3,13 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Guide, Item } from '../data/types';
 import { realGameData } from '../sim/testData';
-import { defaultCharacter } from './defaults';
+import { defaultCharacter, withUsableAttackMix } from './defaults';
 import { statsAtLevel } from './guideBuild';
-import { minimumLevel, startingTown } from './jobs';
+import { jobsAtLevel, minimumLevel, startingTown } from './jobs';
 import { accuracyFor, avoidFor, skillMultiplierScale, statsWindowRange } from './statsWindow';
 import { removeCharacter, upsertCharacter } from './storage';
+import { stepDown, stepUp } from './attackMix';
+import { equipmentBySlot, isFemaleOnly, weaponFitsJob } from './gear';
 
 const DATA = fileURLToPath(new URL('../../public/data/', import.meta.url));
 const guides = JSON.parse(fs.readFileSync(DATA + 'guides.json', 'utf8')) as Guide[];
@@ -91,5 +93,48 @@ describe('removeCharacter', () => {
     const assassin = { ...defaultCharacter(410, 34, { data, guides, items }), id: 'assassin' };
     const hunter = { ...defaultCharacter(310, 34, { data, guides, items }), id: 'hunter' };
     expect(removeCharacter([assassin, hunter], 'assassin').map((character) => character.id)).toEqual(['hunter']);
+  });
+});
+
+describe('guide builds', () => {
+  it('gives a Bandit an attack its dagger can use', () => {
+    const bandit = defaultCharacter(420, 40, { data, guides, items });
+    const [main] = Object.keys(bandit.attackMix).map(Number);
+    expect(data.skills.get(main)?.name).toBe('Double Stab');
+  });
+});
+
+describe('jobsAtLevel', () => {
+  it('offers only 2nd jobs and Beginner at level 40', () => {
+    expect(jobsAtLevel(40)).toEqual([0, 110, 120, 130, 210, 220, 230, 310, 320, 410, 420]);
+  });
+
+  it('offers only 1st jobs and Beginner at level 20', () => {
+    expect(jobsAtLevel(20)).toEqual([0, 100, 200, 300, 400]);
+  });
+});
+
+describe('attack use steps', () => {
+  it('goes up to the next ten first', () => expect(stepUp(46)).toBe(50));
+  it('goes up a full ten from a round number', () => expect(stepUp(50)).toBe(60));
+  it('goes down to the ten below first', () => expect(stepDown(46)).toBe(40));
+  it('never goes below zero', () => expect(stepDown(0)).toBe(0));
+  it('never goes above 100', () => expect(stepUp(100)).toBe(100));
+});
+
+describe('gear', () => {
+  it('knows a female top is female only', () => expect(isFemaleOnly(1041004)).toBe(true));
+  it('knows a male top is not female only', () => expect(isFemaleOnly(1040042)).toBe(false));
+  it('orders equipment by slot with the weapon last', () => {
+    expect(equipmentBySlot([1452006, 1002090, 1060034]).map((entry) => entry.slot)).toEqual(['Hat', 'Bottom', 'Weapon']);
+  });
+  it('does not let a Warrior use a claw', () => expect(weaponFitsJob(47, 110)).toBe(false));
+});
+
+describe('withUsableAttackMix', () => {
+  it('switches to an attack the character can use after a job change', () => {
+    const hunter = { ...defaultCharacter(310, 40, { data, guides, items }), attackMix: { 4001003: 100 } };
+    const skills = data.jobs.filter((job) => [0, 300, 310].includes(job.id)).flatMap((job) => job.skills);
+    expect(Object.keys(withUsableAttackMix(hunter, skills).attackMix)).not.toContain('4001003');
   });
 });
